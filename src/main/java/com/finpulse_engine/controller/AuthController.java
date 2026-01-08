@@ -1,11 +1,11 @@
 package com.finpulse_engine.controller;
 
 
-import com.finpulse_engine.dto.LoginRequest;
-import com.finpulse_engine.dto.LoginResponse;
+import com.finpulse_engine.dto.request.LoginRequest;
+import com.finpulse_engine.dto.response.LoginResponse;
 import com.finpulse_engine.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -14,17 +14,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/login")
-    public Object login(@RequestBody LoginRequest loginRequest) throws Exception {
-        Object resp = this.authService.login(loginRequest);
-        return resp;
-    }
-
-    @PostMapping("/login2")
-    public ResponseEntity<LoginResponse> login2(@RequestBody LoginRequest loginRequest) throws Exception {
-        ResponseEntity<LoginResponse> data =  ResponseEntity.ok(this.authService.login(loginRequest));
-        return data;
+    public LoginResponse login2(@RequestBody LoginRequest loginRequest) throws Exception {
+        return this.authService.login(loginRequest);
     }
 }

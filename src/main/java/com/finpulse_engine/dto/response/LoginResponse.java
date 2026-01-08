@@ -1,4 +1,4 @@
-package com.finpulse_engine.dto;
+package com.finpulse_engine.dto.response;
 
 import com.finpulse_engine.entity.UserExpenseSetting;
 import lombok.Builder;

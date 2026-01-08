@@ -1,19 +1,23 @@
 package com.finpulse_engine.service;
 
-import com.finpulse_engine.dto.LoginRequest;
-import com.finpulse_engine.dto.LoginResponse;
+import com.finpulse_engine.dto.CustomUserDetails;
+import com.finpulse_engine.dto.request.LoginRequest;
+import com.finpulse_engine.dto.response.LoginResponse;
 import com.finpulse_engine.entity.User;
 import com.finpulse_engine.repository.UserRepository;
 import com.finpulse_engine.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import java.util.*;
 
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
@@ -49,5 +53,11 @@ public class AuthService {
                 .build();
 
         return response;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        User user = this.userRepository.findById(Long.parseLong(userId)).get();
+        return new CustomUserDetails(user);
     }
 }
