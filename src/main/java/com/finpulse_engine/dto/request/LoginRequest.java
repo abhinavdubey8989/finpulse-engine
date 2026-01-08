@@ -1,4 +1,4 @@
-package com.finpulse_engine.dto;
+package com.finpulse_engine.dto.request;
 
 import lombok.Data;
 

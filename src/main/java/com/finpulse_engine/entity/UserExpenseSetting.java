@@ -13,6 +13,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 public class UserExpenseSetting implements Serializable {
-    private String heading;
-    private boolean isMandatory;
+    private String category;
+    private Long upperLimit;
 }
