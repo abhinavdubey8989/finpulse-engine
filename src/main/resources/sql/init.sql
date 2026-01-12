@@ -1,0 +1,32 @@
+
+DROP DATABASE IF EXISTS finpulse_db
+
+CREATE TABLE users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+
+    expense_settings JSONB NOT NULL DEFAULT '[]'::jsonb,
+    roles TEXT[] NOT NULL DEFAULT '{}',
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+
+CREATE TABLE personal_expenses (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    year INTEGER NOT NULL,
+    month VARCHAR(20) NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(id),
+
+    category VARCHAR(50) NOT NULL,
+    amount INTEGER NOT NULL,
+    description TEXT NOT NULL,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
