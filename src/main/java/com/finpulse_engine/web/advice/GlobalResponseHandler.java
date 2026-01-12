@@ -54,7 +54,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object>{
         // Wrap the original response body in our ApiResponse.
         return ApiResponseDto.builder()
                 .respId("")
-                .data(body)
+                .apiData(body)
                 .build();
     }
 }

@@ -44,6 +44,7 @@ public class AuthService implements UserDetailsService {
 
         LoginResponse response = LoginResponse.builder()
                 .personalExpenseSettings(user.getExpenseSettings())
+                .userId(user.getId().toString())
                 .accessToken(this.jwtUtil.generateToken(
                          Map.of(
                         "userId", user.getId(),

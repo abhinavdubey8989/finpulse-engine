@@ -7,5 +7,5 @@ import lombok.Data;
 @Builder
 public class ApiResponseDto<T> {
     private String respId;
-    private T data;
+    private T apiData;
 }

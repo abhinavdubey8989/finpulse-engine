@@ -11,5 +11,6 @@ import java.util.List;
 @Data
 public class LoginResponse {
     private String accessToken;
+    private String userId;
     private List<UserExpenseSetting> personalExpenseSettings;
 }
