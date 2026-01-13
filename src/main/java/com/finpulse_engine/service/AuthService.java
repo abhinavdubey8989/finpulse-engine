@@ -43,7 +43,6 @@ public class AuthService implements UserDetailsService {
         }
 
         LoginResponse response = LoginResponse.builder()
-                .personalExpenseSettings(user.getExpenseSettings())
                 .userId(user.getId().toString())
                 .accessToken(this.jwtUtil.generateToken(
                          Map.of(
@@ -58,7 +57,7 @@ public class AuthService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        User user = this.userRepository.findById(Long.parseLong(userId)).get();
+        User user = this.userRepository.findById(UUID.fromString(userId)).get();
         return new CustomUserDetails(user);
     }
 }

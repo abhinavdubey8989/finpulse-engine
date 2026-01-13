@@ -5,10 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface PersonalExpenseRepository extends JpaRepository<PersonalExpense, Long>{
 
-    List<PersonalExpense> findByUserId(Long userId);
+    List<PersonalExpense> findByUserId(UUID userId);
 
 }

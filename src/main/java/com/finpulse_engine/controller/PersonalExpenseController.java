@@ -24,8 +24,9 @@ public class PersonalExpenseController {
         return this.personalExpenseService.createExpense(createPersonalExpenseRequest);
     }
 
+
     @GetMapping("/{userId}")
-    public List<GetPersonalExpenseResponse> getAllPersonalExpenses(@PathVariable Long userId) {
+    public List<GetPersonalExpenseResponse> getAllPersonalExpenses(@PathVariable String userId) {
         return this.personalExpenseService.getAllPersonalExpenses(userId);
     }
 }
