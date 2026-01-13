@@ -1,9 +1,8 @@
 
-DROP DATABASE IF EXISTS finpulse_db
+DROP DATABASE IF EXISTS finpulse_db;
 
 CREATE TABLE users (
-    -- id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY NOT NULL,
 
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -16,11 +15,12 @@ CREATE TABLE users (
 );
 
 
-CREATE TABLE user_expense_settings (
+CREATE TABLE expense_categories (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id),
     category VARCHAR(40) NOT NULL,
-    monthly_upper_limit INTEGER NOT NULL DEFAULT 2000,
-    PRIMARY KEY (user_id, category)
+    monthly_upper_limit INTEGER NOT NULL,
+    description TEXT
 );
 
 CREATE INDEX idx_user_expense_setting_user ON user_personal_expense_setting(user_id);
@@ -33,7 +33,7 @@ CREATE TABLE personal_expenses (
     month VARCHAR(20) NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
 
-    category VARCHAR(50) NOT NULL,
+    category VARCHAR(40) NOT NULL,
     amount INTEGER NOT NULL,
     description TEXT NOT NULL,
 

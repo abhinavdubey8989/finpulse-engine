@@ -7,12 +7,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate. annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.UUID;
 
 
 @Entity
@@ -24,8 +25,10 @@ import java.util.List;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -35,11 +38,6 @@ public class User {
 
     @Column(nullable = false, length = 255)
     private String password;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "expense_settings", columnDefinition = "jsonb")
-    @Builder.Default
-    private List<UserExpenseSetting> expenseSettings = new ArrayList<>();
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "roles", columnDefinition = "text[]")

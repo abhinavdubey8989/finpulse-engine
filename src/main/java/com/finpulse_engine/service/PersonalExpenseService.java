@@ -5,10 +5,12 @@ import com.finpulse_engine.dto.response.CreatePersonalExpenseResponse;
 import com.finpulse_engine.dto.response.GetPersonalExpenseResponse;
 import com.finpulse_engine.entity.PersonalExpense;
 import com.finpulse_engine.repository.PersonalExpenseRepository;
+import com.finpulse_engine.repository.ExpenseCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PersonalExpenseService {
@@ -16,10 +18,14 @@ public class PersonalExpenseService {
     @Autowired
     private PersonalExpenseRepository personalExpenseRepository;
 
+    @Autowired
+    private ExpenseCategoryRepository expenseCategoryRepository;
+
+
     public CreatePersonalExpenseResponse createExpense(CreatePersonalExpenseRequest request) {
 
         PersonalExpense expense = PersonalExpense.builder()
-                .userId(request.getUserId())
+                .userId(UUID.fromString(request.getUserId()))
                 .year(request.getYear())
                 .month(request.getMonth())
                 .category(request.getCategory())
@@ -46,8 +52,8 @@ public class PersonalExpenseService {
     }
 
 
-    public List<GetPersonalExpenseResponse> getAllPersonalExpenses(Long userId) {
-        return this.personalExpenseRepository.findByUserId(userId)
+    public List<GetPersonalExpenseResponse> getAllPersonalExpenses(String userId) {
+        return this.personalExpenseRepository.findByUserId(UUID.fromString(userId))
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

@@ -7,22 +7,14 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
-public class CreatePersonalExpenseRequest {
-
-    @NotNull
-    private String userId;
-
-    @NotNull
-    private Integer year;
-
-    @NotBlank
-    private String month;
+public class CreateExpenseCategoryRequest {
 
     @NotBlank
     private String category;
 
+    @NotNull
     @Positive
-    private Integer amount;
+    private Integer monthlyUpperLimit;
 
     @NotBlank
     private String description;
