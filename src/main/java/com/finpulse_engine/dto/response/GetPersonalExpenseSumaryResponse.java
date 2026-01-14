@@ -4,18 +4,18 @@ package com.finpulse_engine.dto.response;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
-public class GetPersonalExpenseResponse {
+public class GetPersonalExpenseSumaryResponse {
 
     @NotNull
-    private String id;
+    private String userId;
 
     @NotNull
     private Integer year;
@@ -23,18 +23,12 @@ public class GetPersonalExpenseResponse {
     @NotBlank
     private Integer month;
 
-    @NotBlank
-    private String category;
-
-    @Positive
-    private Integer amount;
+    @NotNull
+    private Integer numberOfExpenses;
 
     @NotBlank
-    private String description;
+    private Integer totalExpenseAmount;
 
     @NotBlank
-    private OffsetDateTime createdAt;
-
-    @NotBlank
-    private OffsetDateTime updatedAt;
+    private List<PersonalExpenseSumaryElement> elements;
 }

@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface PersonalExpenseRepository extends JpaRepository<PersonalExpense, Long>{
+public interface PersonalExpenseRepository extends JpaRepository<PersonalExpense, UUID>{
 
     List<PersonalExpense> findByUserId(UUID userId);
+    List<PersonalExpense> findByUserIdAndYearAndMonth(UUID userId, Integer year, Integer month);
+
 
 }

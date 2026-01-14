@@ -1,8 +1,10 @@
 package com.finpulse_engine.controller;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
+import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
 import com.finpulse_engine.dto.response.CreatePersonalExpenseResponse;
 import com.finpulse_engine.dto.response.GetPersonalExpenseResponse;
+import com.finpulse_engine.dto.response.GetPersonalExpenseSumaryResponse;
 import com.finpulse_engine.service.PersonalExpenseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,5 +30,13 @@ public class PersonalExpenseController {
     @GetMapping("/{userId}")
     public List<GetPersonalExpenseResponse> getAllPersonalExpenses(@PathVariable String userId) {
         return this.personalExpenseService.getAllPersonalExpenses(userId);
+    }
+
+    @PostMapping("/{userId}/summary")
+    public GetPersonalExpenseSumaryResponse getPersonalExpenseSummary(
+            @PathVariable String userId,
+            @RequestBody GetPersonalExpenseSumaryRequest getPersonalExpenseSumaryRequest
+            ) {
+        return this.personalExpenseService.getPersonalExpenseSummary(userId, getPersonalExpenseSumaryRequest);
     }
 }

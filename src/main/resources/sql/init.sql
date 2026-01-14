@@ -16,7 +16,7 @@ CREATE TABLE users (
 
 
 CREATE TABLE expense_categories (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id UUID PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
     category VARCHAR(40) NOT NULL,
     monthly_upper_limit INTEGER NOT NULL,
@@ -27,13 +27,13 @@ CREATE INDEX idx_user_expense_setting_user ON user_personal_expense_setting(user
 
 
 CREATE TABLE personal_expenses (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id UUID PRIMARY KEY NOT NULL,
 
     year INTEGER NOT NULL,
-    month VARCHAR(20) NOT NULL,
+    month INTEGER NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
+    category_id UUID NOT NULL REFERENCES expense_categories(id),
 
-    category VARCHAR(40) NOT NULL,
     amount INTEGER NOT NULL,
     description TEXT NOT NULL,
 

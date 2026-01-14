@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory, Long> {
+public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory, UUID> {
 
     List<ExpenseCategory> findByUserId(UUID userId);
 
-    boolean existsByUserIdAndCategory(UUID userId, String category);
+    boolean existsByUserIdAndCategory(UUID userId, String categoryName);
+    boolean existsByUserIdAndId(UUID userId, UUID categoryId);
+
 }

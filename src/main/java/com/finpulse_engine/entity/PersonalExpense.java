@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -19,20 +20,22 @@ import java.util.UUID;
 public class PersonalExpense {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
     @Column(nullable = false)
     private Integer year;
 
-    @Column(nullable = false, length = 20)
-    private String month;
+    @Column(nullable = false)
+    private Integer month;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(nullable = false, length = 50)
-    private String category;
+    @Column(name = "category_id", nullable = false)
+    private UUID categoryId;
 
     @Column(nullable = false)
     private Integer amount;

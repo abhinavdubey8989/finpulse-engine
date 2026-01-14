@@ -38,12 +38,13 @@ public class UserService {
                 .build();
 
         ExpenseCategory saved = this.expenseCategoryRepository.save(expenseCategory);
-        return new CreateExpenseCategoryResponse(saved.getId());
+        return new CreateExpenseCategoryResponse(saved.getId().toString());
     }
 
 
     private ExpenseCategoryElement mapToResponse(ExpenseCategory expenseCategory) {
         return ExpenseCategoryElement.builder()
+                .id(expenseCategory.getId().toString())
                 .category(expenseCategory.getCategory())
                 .monthlyUpperLimit(expenseCategory.getMonthlyUpperLimit())
                 .description(expenseCategory.getDescription())
@@ -56,7 +57,7 @@ public class UserService {
        List<ExpenseCategory> expenseCategories = this.expenseCategoryRepository.findByUserId(UUID.fromString(userId));
        return GetUserSettingsResponse.builder()
                .userId(userId)
-               .userExpenseSetting(expenseCategories
+               .expenseCategories(expenseCategories
                        .stream()
                        .map(this::mapToResponse)
                        .toList())

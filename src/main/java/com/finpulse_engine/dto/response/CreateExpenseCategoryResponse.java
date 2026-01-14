@@ -10,5 +10,5 @@ import lombok.Data;
 public class CreateExpenseCategoryResponse {
 
     @NotNull
-    private Long id;
+    private String id;
 }

@@ -15,6 +15,6 @@ public class GetUserSettingsResponse {
     private String userId;
 
     @NotNull
-    private List<ExpenseCategoryElement> userExpenseSetting;
+    private List<ExpenseCategoryElement> expenseCategories;
 
 }

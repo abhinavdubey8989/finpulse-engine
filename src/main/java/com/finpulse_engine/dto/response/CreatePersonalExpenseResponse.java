@@ -10,5 +10,5 @@ import lombok.Data;
 public class CreatePersonalExpenseResponse {
 
     @NotNull
-    private Long id;
+    private String id;
 }
