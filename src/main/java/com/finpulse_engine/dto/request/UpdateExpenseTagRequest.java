@@ -12,5 +12,4 @@ public class UpdateExpenseTagRequest {
 
     @NotBlank
     private String newName;
-
 }

@@ -2,6 +2,7 @@ package com.finpulse_engine.service;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
 import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
+import com.finpulse_engine.dto.request.UpdatePersonalExpenseRequest;
 import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseCategory;
 import com.finpulse_engine.entity.ExpenseTag;
@@ -9,6 +10,7 @@ import com.finpulse_engine.entity.PersonalExpense;
 import com.finpulse_engine.repository.ExpenseTagRepository;
 import com.finpulse_engine.repository.PersonalExpenseRepository;
 import com.finpulse_engine.repository.ExpenseCategoryRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -50,8 +52,10 @@ public class PersonalExpenseService {
             throw new RuntimeException("Category Not Found");
         }
 
-        if (tagId != null && !this.expenseTagRepository.existsById(UUID.fromString(tagId))) {
-            throw new RuntimeException("Category-tag Not Found");
+        if (tagId != null && !this.expenseTagRepository.existsByIdAndCategoryId(
+                UUID.fromString(tagId),
+                UUID.fromString(createPersonalExpenseRequest.getCategoryId()))) {
+            throw new RuntimeException("Category & tag combination is invalid");
         }
 
         UUID dbTagId = StringUtils.hasText(createPersonalExpenseRequest.getTagId())
@@ -195,7 +199,6 @@ public class PersonalExpenseService {
                 );
             }
 
-            System.out.println(categoryId);
             if (categoryIdToTagIdToSumMap.containsKey(categoryId)) {
                 expenseTagsWithAmountForCategory.add(
                         ExpenseTagWithAmountResponse.builder()
@@ -243,6 +246,45 @@ public class PersonalExpenseService {
                 .totalExpenseAmount(totalExpenseAmount)
                 .elements(elements)
                 .build();
+    }
+
+    public CreatePersonalExpenseResponse updateExpense(
+            String expenseId,
+            UpdatePersonalExpenseRequest updatePersonalExpenseRequest) {
+
+        String description = updatePersonalExpenseRequest.getDescription();
+        String tagId = updatePersonalExpenseRequest.getTagId();
+
+        if ((description == null && tagId == null) ||
+                (description != null && description.isEmpty() && tagId != null && tagId.isEmpty())) {
+            throw new RuntimeException("Either tags or description is needed");
+        }
+
+        if (tagId != null && !this.expenseTagRepository.existsByIdAndCategoryId(
+                UUID.fromString(tagId),
+                UUID.fromString(updatePersonalExpenseRequest.getCategoryId()))) {
+            throw new RuntimeException("Category & tag combination is invalid");
+        }
+
+        // check if expense exists
+        Optional<PersonalExpense> optionalPersonalExpense = this.personalExpenseRepository.findById(UUID.fromString(expenseId));
+        if (!optionalPersonalExpense.isPresent()) {
+            throw new RuntimeException("Expense not found");
+        }
+
+        UUID dbTagId = StringUtils.hasText(updatePersonalExpenseRequest.getTagId())
+                ? UUID.fromString(updatePersonalExpenseRequest.getTagId())
+                : null;
+
+        this.personalExpenseRepository.updateById(
+                UUID.fromString(expenseId),
+                UUID.fromString(updatePersonalExpenseRequest.getCategoryId()),
+                updatePersonalExpenseRequest.getAmount(),
+                updatePersonalExpenseRequest.getDescription(),
+                dbTagId
+        );
+
+        return new CreatePersonalExpenseResponse(expenseId);
     }
 
 }

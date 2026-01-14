@@ -9,7 +9,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CreateExpenseCategoryRequest {
+public class UpdateExpenseCategoryRequest {
 
     @NotBlank
     private String categoryName;
@@ -22,4 +22,6 @@ public class CreateExpenseCategoryRequest {
     private String description;
 
     private List<String> addTags;
+
+    private List<UpdateExpenseTagRequest> updateTags;
 }

@@ -2,6 +2,7 @@ package com.finpulse_engine.service;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
 import com.finpulse_engine.dto.request.CreateExpenseCategoryRequest;
+import com.finpulse_engine.dto.request.UpdateExpenseCategoryRequest;
 import com.finpulse_engine.dto.request.UpdateExpenseTagRequest;
 import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseTag;
@@ -31,7 +32,7 @@ public class UserService {
 
     public List<String> addTags(UUID categoryId, List<String> addTags) {
         List<String> failedAddTags = new ArrayList<>();
-        if(addTags == null || addTags.isEmpty()) {
+        if (addTags == null || addTags.isEmpty()) {
             return failedAddTags;
         }
 
@@ -52,6 +53,9 @@ public class UserService {
 
     public List<String> updateTags(List<UpdateExpenseTagRequest> updateTagRequests) {
         List<String> failedUpdateTags = new ArrayList<>();
+        if (updateTagRequests == null || updateTagRequests.isEmpty()) {
+            return failedUpdateTags;
+        }
 
         for (UpdateExpenseTagRequest updateTagRequest : updateTagRequests) {
             Optional<ExpenseTag> expenseTag = this.expenseTagRepository.findById(UUID.fromString(updateTagRequest.getId()));
@@ -71,7 +75,7 @@ public class UserService {
     public CreateExpenseCategoryResponse createExpenseCategory(String userId, CreateExpenseCategoryRequest createExpenseCategoryRequest) {
         boolean categoryExists = this.expenseCategoryRepository.existsByUserIdAndCategory(
                 UUID.fromString(userId),
-                createExpenseCategoryRequest.getCategory().trim().toLowerCase()
+                createExpenseCategoryRequest.getCategoryName().trim().toLowerCase()
         );
 
         if (categoryExists) {
@@ -80,7 +84,7 @@ public class UserService {
 
         ExpenseCategory expenseCategory = ExpenseCategory.builder()
                 .userId(UUID.fromString(userId))
-                .category(createExpenseCategoryRequest.getCategory().trim().toLowerCase())
+                .category(createExpenseCategoryRequest.getCategoryName().trim().toLowerCase())
                 .monthlyUpperLimit(createExpenseCategoryRequest.getMonthlyUpperLimit())
                 .description(createExpenseCategoryRequest.getDescription())
                 .build();
@@ -129,5 +133,41 @@ public class UserService {
 
     }
 
+
+    public UpdateExpenseCategoryResponse updateExpenseCategory(
+            String userId,
+            String categoryId,
+            UpdateExpenseCategoryRequest updatePersonalExpenseRequest) {
+
+        // check if category to be updated exists or not
+        Optional<ExpenseCategory> existingCategory = this.expenseCategoryRepository.findById(UUID.fromString(categoryId));
+        if (!existingCategory.isPresent()) {
+            throw new RuntimeException("Category to be updated does not exist");
+        }
+
+        String categoryNameInRequest = updatePersonalExpenseRequest.getCategoryName().trim().toLowerCase();
+        boolean isCategoryNameInvalid = (!existingCategory.get().getCategory().equals(categoryNameInRequest)) &&
+                this.expenseCategoryRepository.existsByUserIdAndCategory(UUID.fromString(userId), categoryNameInRequest);
+
+        if (isCategoryNameInvalid) {
+            throw new RuntimeException("Category name already in use");
+        }
+
+        List<String> failedAddTags = addTags(UUID.fromString(categoryId), updatePersonalExpenseRequest.getAddTags());
+        List<String> failedUpateTags = updateTags(updatePersonalExpenseRequest.getUpdateTags());
+
+        this.expenseCategoryRepository.updateById(
+                UUID.fromString(categoryId),
+                categoryNameInRequest,
+                updatePersonalExpenseRequest.getDescription(),
+                updatePersonalExpenseRequest.getMonthlyUpperLimit());
+
+        return UpdateExpenseCategoryResponse.builder()
+                .id(categoryId)
+                .failedAddTags(failedAddTags)
+                .failedUpdateTags(failedUpateTags)
+                .build();
+
+    }
 
 }

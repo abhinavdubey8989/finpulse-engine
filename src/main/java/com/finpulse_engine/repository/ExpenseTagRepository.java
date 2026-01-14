@@ -17,7 +17,7 @@ public interface ExpenseTagRepository extends JpaRepository<ExpenseTag, UUID> {
 
     List<ExpenseTag> findByCategoryId(UUID categoryId);
     boolean existsByCategoryIdAndName(UUID categoryId, String name);
-    ExpenseTag findByIdAndCategoryId(UUID id, UUID categoryId);
+    boolean existsByIdAndCategoryId(UUID id, UUID categoryId);
     boolean existsById(UUID id);
     List<ExpenseTag> findByCategoryIdIn(List<UUID> categoryIds);
 

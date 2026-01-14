@@ -2,6 +2,7 @@ package com.finpulse_engine.controller;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
 import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
+import com.finpulse_engine.dto.request.UpdatePersonalExpenseRequest;
 import com.finpulse_engine.dto.response.CreatePersonalExpenseResponse;
 import com.finpulse_engine.dto.response.GetPersonalExpenseResponse;
 import com.finpulse_engine.dto.response.GetPersonalExpenseSumaryResponse;
@@ -24,6 +25,15 @@ public class PersonalExpenseController {
     @PostMapping("")
     public CreatePersonalExpenseResponse createPersonalExpense(@RequestBody CreatePersonalExpenseRequest createPersonalExpenseRequest) {
         return this.personalExpenseService.createExpense(createPersonalExpenseRequest);
+    }
+
+    @PutMapping("/{expenseId}")
+    public CreatePersonalExpenseResponse createPersonalExpense(
+            @PathVariable String expenseId,
+            @RequestBody UpdatePersonalExpenseRequest updatePersonalExpenseRequest) {
+        return this.personalExpenseService.updateExpense(
+                expenseId,
+                updatePersonalExpenseRequest);
     }
 
 
