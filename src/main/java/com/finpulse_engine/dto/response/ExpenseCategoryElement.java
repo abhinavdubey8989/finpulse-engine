@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class ExpenseCategoryElement {
@@ -19,4 +21,5 @@ public class ExpenseCategoryElement {
     @NotNull
     private Integer monthlyUpperLimit;
     private String description;
+    private List<ExpenseTagResponse> tags;
 }

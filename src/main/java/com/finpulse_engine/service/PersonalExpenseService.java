@@ -2,16 +2,16 @@ package com.finpulse_engine.service;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
 import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
-import com.finpulse_engine.dto.response.CreatePersonalExpenseResponse;
-import com.finpulse_engine.dto.response.GetPersonalExpenseResponse;
-import com.finpulse_engine.dto.response.GetPersonalExpenseSumaryResponse;
-import com.finpulse_engine.dto.response.PersonalExpenseSumaryElement;
+import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseCategory;
+import com.finpulse_engine.entity.ExpenseTag;
 import com.finpulse_engine.entity.PersonalExpense;
+import com.finpulse_engine.repository.ExpenseTagRepository;
 import com.finpulse_engine.repository.PersonalExpenseRepository;
 import com.finpulse_engine.repository.ExpenseCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.UUID;
@@ -27,25 +27,45 @@ public class PersonalExpenseService {
     @Autowired
     private ExpenseCategoryRepository expenseCategoryRepository;
 
+    @Autowired
+    private ExpenseTagRepository expenseTagRepository;
 
-    public CreatePersonalExpenseResponse createExpense(CreatePersonalExpenseRequest request) {
+
+    public CreatePersonalExpenseResponse createExpense(CreatePersonalExpenseRequest createPersonalExpenseRequest) {
+
+        String description = createPersonalExpenseRequest.getDescription();
+        String tagId = createPersonalExpenseRequest.getTagId();
+
+        if ((description == null && tagId == null) ||
+                (description != null && description.isEmpty() && tagId != null && tagId.isEmpty())) {
+            throw new RuntimeException("Either tags or description is needed");
+        }
 
         boolean categoryExists = this.expenseCategoryRepository.existsByUserIdAndId(
-                UUID.fromString(request.getUserId()),
-                UUID.fromString(request.getCategoryId())
+                UUID.fromString(createPersonalExpenseRequest.getUserId()),
+                UUID.fromString(createPersonalExpenseRequest.getCategoryId())
         );
 
         if (!categoryExists) {
             throw new RuntimeException("Category Not Found");
         }
 
+        if (tagId != null && !this.expenseTagRepository.existsById(UUID.fromString(tagId))) {
+            throw new RuntimeException("Category-tag Not Found");
+        }
+
+        UUID dbTagId = StringUtils.hasText(createPersonalExpenseRequest.getTagId())
+                ? UUID.fromString(createPersonalExpenseRequest.getTagId())
+                : null;
+
         PersonalExpense expense = PersonalExpense.builder()
-                .userId(UUID.fromString(request.getUserId()))
-                .year(request.getYear())
-                .month(request.getMonth())
-                .categoryId(UUID.fromString(request.getCategoryId()))
-                .amount(request.getAmount())
-                .description(request.getDescription())
+                .userId(UUID.fromString(createPersonalExpenseRequest.getUserId()))
+                .year(createPersonalExpenseRequest.getYear())
+                .month(createPersonalExpenseRequest.getMonth())
+                .categoryId(UUID.fromString(createPersonalExpenseRequest.getCategoryId()))
+                .tagId(dbTagId)
+                .amount(createPersonalExpenseRequest.getAmount())
+                .description(createPersonalExpenseRequest.getDescription())
                 .build();
 
 
@@ -54,13 +74,27 @@ public class PersonalExpenseService {
     }
 
     private GetPersonalExpenseResponse mapToResponse(PersonalExpense expense) {
+        UUID tagId = expense.getTagId();
+        ExpenseTagResponse expenseTagResponse = null;
+        if (tagId != null) {
+            ExpenseTag tag = this.expenseTagRepository.findById(tagId).get();
+            expenseTagResponse = ExpenseTagResponse.builder()
+                    .name(tag.getName())
+                    .id(tag.getId().toString())
+                    .build();
+        }
+
+        ExpenseCategory expenseCategory = this.expenseCategoryRepository.findById(expense.getCategoryId()).get();
+
         return GetPersonalExpenseResponse.builder()
                 .id(expense.getId().toString())
                 .year(expense.getYear())
                 .month(expense.getMonth())
-                .category(expense.getCategoryId().toString())
+                .categoryId(expense.getCategoryId().toString())
+                .categoryName(expenseCategory.getCategory())
                 .amount(expense.getAmount())
                 .description(expense.getDescription())
+                .tag(expenseTagResponse)
                 .createdAt(expense.getCreatedAt())
                 .updatedAt(expense.getUpdatedAt())
                 .build();
@@ -83,13 +117,45 @@ public class PersonalExpenseService {
         );
 
         List<ExpenseCategory> categories = this.expenseCategoryRepository.findByUserId(UUID.fromString(userId));
-        // Index categories by ID for fast lookup
+        List<UUID> categoryIds = categories.stream().map(ExpenseCategory::getId).collect(Collectors.toList());
+        List<ExpenseTag> tags = this.expenseTagRepository.findByCategoryIdIn(categoryIds);
+
+        // UUID -> category map (for fast lookup)
         Map<UUID, ExpenseCategory> categoryMap =
                 categories.stream()
                         .collect(Collectors.toMap(
                                 ExpenseCategory::getId,
                                 Function.identity()
                         ));
+
+        // UUID -> tag map (for fast lookup)
+        Map<UUID, ExpenseTag> tagMap =
+                tags.stream()
+                        .collect(Collectors.toMap(
+                                ExpenseTag::getId,
+                                Function.identity()
+                        ));
+
+
+        // UUID -> List<UUID> (category -> tagIds)
+        Map<UUID, List<UUID>> categoryToTagsMap = new HashMap<>();
+        for (ExpenseCategory category : categories) {
+            List<UUID> tagsOfCategory = new ArrayList<>();
+            for (ExpenseTag tag : tags) {
+                if (category.getId().equals(tag.getCategoryId())) {
+                    tagsOfCategory.add(tag.getId());
+                }
+            }
+            categoryToTagsMap.put(category.getId(), tagsOfCategory);
+        }
+
+        // UUID -> UUID (tagId -> category)
+        Map<UUID, UUID> tagIdToCategoryIdMap =
+                tags.stream().collect(Collectors.toMap(
+                        ExpenseTag::getId,
+                        ExpenseTag::getCategoryId
+                ));
+
 
         // Group expenses by categoryId and sum amounts
         Map<UUID, Integer> expenseSumByCategory =
@@ -99,14 +165,61 @@ public class PersonalExpenseService {
                                 Collectors.summingInt(PersonalExpense::getAmount)
                         ));
 
+
+        Map<UUID, Map<String, Integer>> categoryIdToTagIdToSumMap = new HashMap<>();
+        for (PersonalExpense expense : expenses) {
+            String tagId = expense.getTagId() == null ? "Others" : expense.getTagId().toString();
+            Map<String, Integer> tagIdToSumMap = categoryIdToTagIdToSumMap.getOrDefault(
+                    expense.getCategoryId(),
+                    new HashMap<>()
+            );
+            tagIdToSumMap.put(
+                    tagId,
+                    expense.getAmount() + tagIdToSumMap.getOrDefault(tagId, 0)
+            );
+            categoryIdToTagIdToSumMap.put(expense.getCategoryId(), tagIdToSumMap);
+        }
+
+        Map<UUID, List<ExpenseTagWithAmountResponse>> categoryIdToExpenseTagWithAmount = new HashMap<>();
+        for (Map.Entry<UUID, List<UUID>> categoryToTagsMapEntry : categoryToTagsMap.entrySet()) {
+            UUID categoryId = categoryToTagsMapEntry.getKey();
+            List<ExpenseTagWithAmountResponse> expenseTagsWithAmountForCategory = categoryIdToExpenseTagWithAmount.getOrDefault(categoryId, new ArrayList<>());
+            for (UUID tagId : categoryToTagsMapEntry.getValue()) {
+                int expenseAmount = categoryIdToTagIdToSumMap.getOrDefault(categoryId, new HashMap<>()).getOrDefault(tagId.toString(), 0);
+                expenseTagsWithAmountForCategory.add(
+                        ExpenseTagWithAmountResponse.builder()
+                                .id(tagId.toString())
+                                .name(tagMap.get(tagId).getName())
+                                .expenseAmount(expenseAmount)
+                                .build()
+                );
+            }
+
+            System.out.println(categoryId);
+            if (categoryIdToTagIdToSumMap.containsKey(categoryId)) {
+                expenseTagsWithAmountForCategory.add(
+                        ExpenseTagWithAmountResponse.builder()
+                                .id("Others")
+                                .name("Others")
+                                .expenseAmount(categoryIdToTagIdToSumMap.get(categoryId).getOrDefault("Others", 0))
+                                .build()
+                );
+            }
+
+            categoryIdToExpenseTagWithAmount.put(
+                    categoryToTagsMapEntry.getKey(),
+                    expenseTagsWithAmountForCategory);
+        }
+
         // Build summary elements
         List<PersonalExpenseSumaryElement> elements = expenseSumByCategory.entrySet()
                 .stream()
                 .map(entry -> {
+
                     UUID categoryId = entry.getKey();
                     Integer totalSpent = entry.getValue();
-                    ExpenseCategory category =
-                            categoryMap.get(categoryId);
+                    ExpenseCategory category = categoryMap.get(categoryId);
+
                     return PersonalExpenseSumaryElement.builder()
                             .categoryId(categoryId.toString())
                             .category(category.getCategory())
@@ -115,6 +228,7 @@ public class PersonalExpenseService {
                                     category.getMonthlyUpperLimit().longValue()
                             )
                             .monthlyExpenseDone(totalSpent.longValue())
+                            .tagBreakup(categoryIdToExpenseTagWithAmount.getOrDefault(categoryId, new ArrayList<>()))
                             .build();
                 })
                 .toList();

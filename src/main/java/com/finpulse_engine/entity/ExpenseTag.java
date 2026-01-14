@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
+
 @Entity
-@Table(name = "personal_expenses")
-@Data                       // Generates getters, setters, toString, equals, hashCode
+@Table(name = "expense_tags")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PersonalExpense {
+public class ExpenseTag {
 
     @Id
     @GeneratedValue
@@ -26,28 +26,14 @@ public class PersonalExpense {
     @Column(updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
-    private Integer year;
-
-    @Column(nullable = false)
-    private Integer month;
-
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
-
     @Column(name = "category_id", nullable = false)
     private UUID categoryId;
 
-    @Column(name = "tag_id")
-    private UUID tagId;
+    @Column(nullable = false, length = 40)
+    private String name;
 
-    @Column(nullable = false)
-    private Integer amount;
-
-    @Column(nullable = false)
-    private String description;
-
-    @Column(name = "created_at", updatable = false)
+    // Date fields
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -64,4 +50,3 @@ public class PersonalExpense {
         updatedAt = OffsetDateTime.now();
     }
 }
-

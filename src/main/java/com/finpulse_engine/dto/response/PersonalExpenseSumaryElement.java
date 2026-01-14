@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 public class PersonalExpenseSumaryElement {
@@ -25,4 +27,6 @@ public class PersonalExpenseSumaryElement {
     @NotNull
     private Long monthlyExpenseDone;
 
+    @NotBlank
+    private List<ExpenseTagWithAmountResponse> tagBreakup;
 }

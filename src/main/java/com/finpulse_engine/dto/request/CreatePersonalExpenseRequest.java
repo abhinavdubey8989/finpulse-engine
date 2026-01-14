@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CreatePersonalExpenseRequest {
 
@@ -14,7 +16,7 @@ public class CreatePersonalExpenseRequest {
     @NotNull
     private Integer year;
 
-    @NotBlank
+    @NotNull
     @Min(1)
     @Max(12)
     private Integer month;
@@ -25,6 +27,7 @@ public class CreatePersonalExpenseRequest {
     @Positive
     private Integer amount;
 
-    @NotBlank
     private String description;
+
+    private String tagId;
 }

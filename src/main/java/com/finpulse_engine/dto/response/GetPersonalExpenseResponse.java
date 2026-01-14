@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -24,7 +25,10 @@ public class GetPersonalExpenseResponse {
     private Integer month;
 
     @NotBlank
-    private String category;
+    private String categoryId;
+
+    @NotBlank
+    private String categoryName;
 
     @Positive
     private Integer amount;
@@ -37,4 +41,6 @@ public class GetPersonalExpenseResponse {
 
     @NotBlank
     private OffsetDateTime updatedAt;
+
+    private ExpenseTagResponse tag;
 }
