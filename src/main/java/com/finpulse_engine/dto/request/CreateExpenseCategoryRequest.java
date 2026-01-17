@@ -6,11 +6,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CreateExpenseCategoryRequest {
 
     @NotBlank
-    private String category;
+    private String categoryName;
 
     @NotNull
     @Positive
@@ -18,4 +20,6 @@ public class CreateExpenseCategoryRequest {
 
     @NotBlank
     private String description;
+
+    private List<String> addTags;
 }

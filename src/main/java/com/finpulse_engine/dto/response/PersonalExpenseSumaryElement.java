@@ -3,7 +3,6 @@ package com.finpulse_engine.dto.response;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Builder;
 import lombok.Data;
 
@@ -11,15 +10,23 @@ import java.util.List;
 
 @Data
 @Builder
-public class ExpenseCategoryElement {
+public class PersonalExpenseSumaryElement {
 
     @NotNull
-    private String id;
+    private String categoryId;
 
     @NotNull
     private String category;
+
     @NotNull
-    private Integer monthlyUpperLimit;
-    private String description;
-    private List<ExpenseTagResponse> tags;
+    private String categoryDescription;
+
+    @NotNull
+    private Long monthlyUpperLimit;
+
+    @NotNull
+    private Long monthlyExpenseDone;
+
+    @NotBlank
+    private List<ExpenseTagWithAmountResponse> tagBreakup;
 }

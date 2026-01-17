@@ -16,26 +16,38 @@ CREATE TABLE users (
 
 
 CREATE TABLE expense_categories (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id UUID PRIMARY KEY NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
     category VARCHAR(40) NOT NULL,
     monthly_upper_limit INTEGER NOT NULL,
-    description TEXT
+    description TEXT,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX idx_user_expense_setting_user ON user_personal_expense_setting(user_id);
+
+CREATE TABLE expense_tags (
+    id UUID PRIMARY KEY NOT NULL,
+    category_id UUID NOT NULL REFERENCES expense_categories(id),
+    name VARCHAR(40) NOT NULL,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
 
 
 CREATE TABLE personal_expenses (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id UUID PRIMARY KEY NOT NULL,
 
     year INTEGER NOT NULL,
-    month VARCHAR(20) NOT NULL,
+    month INTEGER NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id),
+    category_id UUID NOT NULL REFERENCES expense_categories(id),
+    tag_id UUID REFERENCES expense_tags(id),
 
-    category VARCHAR(40) NOT NULL,
     amount INTEGER NOT NULL,
-    description TEXT NOT NULL,
+    description TEXT,
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()

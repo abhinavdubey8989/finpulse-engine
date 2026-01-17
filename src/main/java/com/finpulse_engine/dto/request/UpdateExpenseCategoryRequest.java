@@ -1,25 +1,27 @@
-package com.finpulse_engine.dto.response;
+package com.finpulse_engine.dto.request;
 
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-@Builder
-public class ExpenseCategoryElement {
+public class UpdateExpenseCategoryRequest {
+
+    @NotBlank
+    private String categoryName;
 
     @NotNull
-    private String id;
-
-    @NotNull
-    private String category;
-    @NotNull
+    @Positive
     private Integer monthlyUpperLimit;
+
+    @NotBlank
     private String description;
-    private List<ExpenseTagResponse> tags;
+
+    private List<String> addTags;
+
+    private List<UpdateExpenseTagRequest> updateTags;
 }
