@@ -1,11 +1,14 @@
 package com.finpulse_engine.entity;
 
 
+import com.finpulse_engine.enums.DifferentiatorType;
+import com.finpulse_engine.psql_enum.DifferentiatorTypeHandler;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.OffsetDateTime;
@@ -40,6 +43,15 @@ public class ExpenseCategory {
 
     @Column()
     private String description;
+
+    @Type(DifferentiatorTypeHandler.class)
+    @Column(name = "type",
+            columnDefinition = "differentiator_type",
+            nullable = false)
+    private DifferentiatorType type;
+
+    @Column(name = "group_id")
+    private UUID groupId;
 
     // Date fields
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -36,4 +36,7 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
             @Param("monthlyUpperLimit") int monthlyUpperLimit
     );
 
+
+    boolean existsByGroupIdAndCategory(UUID groupId, String categoryName);
+
 }

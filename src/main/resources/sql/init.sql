@@ -108,15 +108,17 @@ CREATE TABLE group_expenses (
 
     year INTEGER NOT NULL,
     month INTEGER NOT NULL,
-    created_by UUID NOT NULL REFERENCES users(id),
+    paid_by UUID NOT NULL REFERENCES users(id),
     category_id UUID NOT NULL REFERENCES expense_categories(id),
     tag_id UUID REFERENCES expense_tags(id),
+    group_id UUID REFERENCES expense_groups(id),
 
     amount INTEGER NOT NULL,
     description TEXT,
 
     split_type split_type NOT NULL,
-    splits JSONB  NOT NULL,
+    splits JSONB NOT NULL,
+    due_amounts JSONB NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()

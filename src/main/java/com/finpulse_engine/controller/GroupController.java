@@ -25,15 +25,29 @@ public class GroupController {
     }
 
 
-    @PutMapping("/{groupId}")
-    public Object updateGroup(@RequestBody Object loginRequest) {
-        return null;
+    @PostMapping("/{groupId}/expense-category")
+    public CreateExpenseCategoryResponse createGroupExpenseCategory(
+            @PathVariable String groupId,
+            @RequestBody CreateGroupExpenseCategoryRequest createGroupExpenseCategoryRequest) {
+        return this.groupService.createGroupExpenseCategory(groupId, createGroupExpenseCategoryRequest);
+    }
+
+
+    @PutMapping("/{groupId}/expense-category/{categoryId}")
+    public UpdateExpenseCategoryResponse updateGroupExpenseCategory(
+            @PathVariable String groupId,
+            @PathVariable String categoryId,
+            @RequestBody UpdateGroupExpenseCategoryRequest updateGroupExpenseCategoryRequest) {
+        return this.groupService.updateExpenseCategory(groupId, categoryId, updateGroupExpenseCategoryRequest);
     }
 
 
     @PostMapping("/{groupId}/expense")
-    public Object addGroupExpense(@RequestBody Object loginRequest) {
-        return null;
+    public Object addGroupExpense(
+            @PathVariable String groupId,
+            @RequestBody CreateGroupExpenseRequest createGroupExpenseRequest
+    ) {
+        return this.groupService.createGroupExpense(groupId, createGroupExpenseRequest);
     }
 
 
