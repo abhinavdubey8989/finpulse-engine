@@ -2,12 +2,16 @@ package com.finpulse_engine.entity;
 
 
 import com.finpulse_engine.enums.SplitType;
+import com.finpulse_engine.psql_enum.SplitTypeHandler;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -51,14 +55,17 @@ public class GroupExpense {
     @Column()
     private String description;
 
+    @Type(SplitTypeHandler.class)
     @Column(name = "split_type",
             columnDefinition = "split_type",
             nullable = false)
     private SplitType splitType;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(nullable = false, columnDefinition = "jsonb")
     private Map<String, Integer> splits;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "due_amounts",
             columnDefinition = "jsonb",
             nullable = false)

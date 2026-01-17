@@ -111,7 +111,7 @@ CREATE TABLE group_expenses (
     paid_by UUID NOT NULL REFERENCES users(id),
     category_id UUID NOT NULL REFERENCES expense_categories(id),
     tag_id UUID REFERENCES expense_tags(id),
-    group_id UUID REFERENCES expense_groups(id),
+    group_id UUID NOT NULL REFERENCES expense_groups(id),
 
     amount INTEGER NOT NULL,
     description TEXT,

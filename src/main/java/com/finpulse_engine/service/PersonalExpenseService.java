@@ -10,7 +10,6 @@ import com.finpulse_engine.entity.PersonalExpense;
 import com.finpulse_engine.repository.ExpenseTagRepository;
 import com.finpulse_engine.repository.PersonalExpenseRepository;
 import com.finpulse_engine.repository.ExpenseCategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -33,7 +32,7 @@ public class PersonalExpenseService {
     private ExpenseTagRepository expenseTagRepository;
 
 
-    public CreatePersonalExpenseResponse createExpense(CreatePersonalExpenseRequest createPersonalExpenseRequest) {
+    public CreateEntityResponse createExpense(CreatePersonalExpenseRequest createPersonalExpenseRequest) {
 
         String description = createPersonalExpenseRequest.getDescription();
         String tagId = createPersonalExpenseRequest.getTagId();
@@ -74,7 +73,7 @@ public class PersonalExpenseService {
 
 
         PersonalExpense saved = this.personalExpenseRepository.save(expense);
-        return new CreatePersonalExpenseResponse(saved.getId().toString());
+        return new CreateEntityResponse(saved.getId().toString());
     }
 
     private GetPersonalExpenseResponse mapToResponse(PersonalExpense expense) {
@@ -248,7 +247,7 @@ public class PersonalExpenseService {
                 .build();
     }
 
-    public CreatePersonalExpenseResponse updateExpense(
+    public CreateEntityResponse updateExpense(
             String expenseId,
             UpdatePersonalExpenseRequest updatePersonalExpenseRequest) {
 
@@ -284,7 +283,7 @@ public class PersonalExpenseService {
                 dbTagId
         );
 
-        return new CreatePersonalExpenseResponse(expenseId);
+        return new CreateEntityResponse(expenseId);
     }
 
 }

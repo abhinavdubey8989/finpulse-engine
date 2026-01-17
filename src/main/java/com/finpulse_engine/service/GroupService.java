@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -277,7 +276,7 @@ public class GroupService {
     }
 
 
-    public CreatePersonalExpenseResponse createGroupExpense(
+    public CreateEntityResponse createGroupExpense(
             String groupId,
             CreateGroupExpenseRequest createGroupExpenseRequest) {
 
@@ -312,9 +311,10 @@ public class GroupService {
 
         GroupExpense groupExpense = GroupExpense.builder()
                 .paidBy(UUID.fromString(createGroupExpenseRequest.getPaidByUserId()))
+                .categoryId(UUID.fromString(createGroupExpenseRequest.getCategoryId()))
+                .groupId(UUID.fromString(groupId))
                 .year(createGroupExpenseRequest.getYear())
                 .month(createGroupExpenseRequest.getMonth())
-                .categoryId(UUID.fromString(createGroupExpenseRequest.getCategoryId()))
                 .tagId(dbTagId)
                 .amount(createGroupExpenseRequest.getAmount())
                 .description(createGroupExpenseRequest.getDescription())
@@ -324,7 +324,7 @@ public class GroupService {
                 .build();
 
         GroupExpense saved = this.groupExpenseRepository.save(groupExpense);
-        return new CreatePersonalExpenseResponse(saved.getId().toString());
+        return new CreateEntityResponse(saved.getId().toString());
     }
 
 

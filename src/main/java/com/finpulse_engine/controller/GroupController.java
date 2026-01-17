@@ -43,7 +43,7 @@ public class GroupController {
 
 
     @PostMapping("/{groupId}/expense")
-    public Object addGroupExpense(
+    public CreateEntityResponse addGroupExpense(
             @PathVariable String groupId,
             @RequestBody CreateGroupExpenseRequest createGroupExpenseRequest
     ) {

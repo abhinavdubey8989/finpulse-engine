@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CreatePersonalExpenseResponse {
+public class CreateEntityResponse {
 
     @NotNull
     private String id;
