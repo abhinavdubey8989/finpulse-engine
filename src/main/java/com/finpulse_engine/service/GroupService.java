@@ -176,10 +176,11 @@ public class GroupService {
     }
 
 
-    public void validateSplits(String groupId, CreateGroupExpenseRequest createGroupExpenseRequest) {
-
-        SplitType splitType = createGroupExpenseRequest.getSplitType();
-        Map<String, Integer> splits = createGroupExpenseRequest.getSplits();
+    public void validateSplits(
+            String groupId,
+            Integer expenseAmount,
+            SplitType splitType,
+            Map<String, Integer> splits) {
 
         // check-1 : splits must have valid users ie. users must be present in system
         if (splits.isEmpty()) {
@@ -225,20 +226,18 @@ public class GroupService {
                 }
                 sumOfAmounts += amount;
             }
-            if (sumOfAmounts != createGroupExpenseRequest.getAmount()) {
+            if (sumOfAmounts != expenseAmount.intValue()) {
                 throw new RuntimeException("Invalid sum of amounts : " + sumOfAmounts);
             }
         }
     }
 
-    public Map<String, Integer> getDueAmounts(CreateGroupExpenseRequest request) {
+    public Map<String, Integer> getDueAmounts(
+            String paidByUserId,
+            int expenseAmount,
+            SplitType splitType,
+            Map<String, Integer> splits) {
         Map<String, Integer> dueAmounts = new HashMap<>();
-
-        String paidByUserId = request.getPaidByUserId();
-        int totalAmount = request.getAmount();
-        SplitType splitType = request.getSplitType();
-        Map<String, Integer> splits = request.getSplits();
-
         switch (splitType) {
 
             case EXACT -> {
@@ -255,17 +254,14 @@ public class GroupService {
 
             case PERCENT -> {
                 // splits: userId -> percentage of total amount
-                int calculatedSum = 0;
-
                 for (Map.Entry<String, Integer> entry : splits.entrySet()) {
                     String fromUserId = entry.getKey();
                     Integer percent = entry.getValue();
 
                     if (fromUserId.equals(paidByUserId)) continue;
 
-                    int amountOwed = (int) Math.ceil((totalAmount * percent) / 100.0);
+                    int amountOwed = (int) Math.ceil((expenseAmount * percent) / 100.0);
                     dueAmounts.put(fromUserId, amountOwed);
-                    calculatedSum += amountOwed;
                 }
             }
 
@@ -276,7 +272,7 @@ public class GroupService {
     }
 
 
-    public CreateEntityResponse createGroupExpense(
+    public EntityIdResponse createGroupExpense(
             String groupId,
             CreateGroupExpenseRequest createGroupExpenseRequest) {
 
@@ -303,11 +299,22 @@ public class GroupService {
             throw new RuntimeException("Category & tag combination is invalid");
         }
 
-        validateSplits(groupId, createGroupExpenseRequest);
+        validateSplits(
+                groupId,
+                createGroupExpenseRequest.getAmount(),
+                createGroupExpenseRequest.getSplitType(),
+                createGroupExpenseRequest.getSplits());
 
         UUID dbTagId = StringUtils.hasText(createGroupExpenseRequest.getTagId())
                 ? UUID.fromString(createGroupExpenseRequest.getTagId())
                 : null;
+
+        Map<String, Integer> dueAmounts = this.getDueAmounts(
+                createGroupExpenseRequest.getPaidByUserId(),
+                createGroupExpenseRequest.getAmount(),
+                createGroupExpenseRequest.getSplitType(),
+                createGroupExpenseRequest.getSplits()
+        );
 
         GroupExpense groupExpense = GroupExpense.builder()
                 .paidBy(UUID.fromString(createGroupExpenseRequest.getPaidByUserId()))
@@ -320,11 +327,79 @@ public class GroupService {
                 .description(createGroupExpenseRequest.getDescription())
                 .splitType(createGroupExpenseRequest.getSplitType())
                 .splits(createGroupExpenseRequest.getSplits())
-                .dueAmounts(getDueAmounts(createGroupExpenseRequest))
+                .dueAmounts(dueAmounts)
                 .build();
 
         GroupExpense saved = this.groupExpenseRepository.save(groupExpense);
-        return new CreateEntityResponse(saved.getId().toString());
+        return new EntityIdResponse(saved.getId().toString());
+    }
+
+
+    public EntityIdResponse updateGroupExpense(
+            String groupId,
+            String expenseId,
+            UpdateGroupExpenseRequest updateGroupExpenseRequest) {
+
+        // check-1 : either tag or description must be present
+        String description = updateGroupExpenseRequest.getDescription();
+        String tagId = updateGroupExpenseRequest.getTagId();
+        if ((description == null && tagId == null) ||
+                (description != null && description.isEmpty() && tagId != null && tagId.isEmpty())) {
+            throw new RuntimeException("Either tags or description is needed");
+        }
+
+        // check-2 : the category , must belong to the group
+        boolean categoryExists = this.expenseCategoryRepository.existsByIdAndGroupId(
+                UUID.fromString(updateGroupExpenseRequest.getCategoryId()),
+                UUID.fromString(groupId)
+        );
+        if (!categoryExists) {
+            throw new RuntimeException("Category Not Found");
+        }
+
+        // check-3 : If tag is given, it must belong to the category
+        if (tagId != null && !this.expenseTagRepository.existsByIdAndCategoryId(
+                UUID.fromString(tagId),
+                UUID.fromString(updateGroupExpenseRequest.getCategoryId()))) {
+            throw new RuntimeException("Category & tag combination is invalid");
+        }
+
+        // check-4 : expense must exist
+        Optional<GroupExpense> optionalGroupExpense = this.groupExpenseRepository.findById(UUID.fromString(expenseId));
+        if (!optionalGroupExpense.isPresent()) {
+            throw new RuntimeException("Group expense not found");
+        }
+
+        // check-4 : validate splits
+        validateSplits(
+                groupId,
+                updateGroupExpenseRequest.getAmount(),
+                updateGroupExpenseRequest.getSplitType(),
+                updateGroupExpenseRequest.getSplits());
+
+        UUID dbTagId = StringUtils.hasText(updateGroupExpenseRequest.getTagId())
+                ? UUID.fromString(updateGroupExpenseRequest.getTagId())
+                : null;
+
+        Map<String, Integer> dueAmounts = this.getDueAmounts(
+                optionalGroupExpense.get().getPaidBy().toString(),
+                updateGroupExpenseRequest.getAmount(),
+                updateGroupExpenseRequest.getSplitType(),
+                updateGroupExpenseRequest.getSplits()
+        );
+
+        this.groupExpenseRepository.updateById(
+                UUID.fromString(expenseId),
+                UUID.fromString(updateGroupExpenseRequest.getCategoryId()),
+                updateGroupExpenseRequest.getAmount(),
+                updateGroupExpenseRequest.getDescription(),
+                dbTagId,
+                updateGroupExpenseRequest.getSplitType(),
+                updateGroupExpenseRequest.getSplits(),
+                dueAmounts
+        );
+
+        return new EntityIdResponse(expenseId);
     }
 
 

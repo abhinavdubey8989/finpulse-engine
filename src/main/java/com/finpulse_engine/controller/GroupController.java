@@ -3,12 +3,9 @@ package com.finpulse_engine.controller;
 import com.finpulse_engine.dto.request.*;
 import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.service.GroupService;
-import com.finpulse_engine.service.PersonalExpenseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 
 @RestController
@@ -43,17 +40,19 @@ public class GroupController {
 
 
     @PostMapping("/{groupId}/expense")
-    public CreateEntityResponse addGroupExpense(
+    public EntityIdResponse addGroupExpense(
             @PathVariable String groupId,
-            @RequestBody CreateGroupExpenseRequest createGroupExpenseRequest
-    ) {
+            @RequestBody CreateGroupExpenseRequest createGroupExpenseRequest) {
         return this.groupService.createGroupExpense(groupId, createGroupExpenseRequest);
     }
 
 
     @PutMapping("/{groupId}/expense/{expenseId}")
-    public Object updateGroupExpense(@RequestBody Object loginRequest) {
-        return null;
+    public EntityIdResponse updateGroupExpense(
+            @PathVariable String groupId,
+            @PathVariable String expenseId,
+            @RequestBody UpdateGroupExpenseRequest updateGroupExpenseRequest) {
+        return this.groupService.updateGroupExpense(groupId, expenseId, updateGroupExpenseRequest);
     }
 
 

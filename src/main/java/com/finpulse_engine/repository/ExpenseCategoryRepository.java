@@ -38,5 +38,5 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
 
 
     boolean existsByGroupIdAndCategory(UUID groupId, String categoryName);
-
+    boolean existsByIdAndGroupId(UUID id, UUID groupId);
 }

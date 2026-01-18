@@ -32,7 +32,7 @@ public class PersonalExpenseService {
     private ExpenseTagRepository expenseTagRepository;
 
 
-    public CreateEntityResponse createExpense(CreatePersonalExpenseRequest createPersonalExpenseRequest) {
+    public EntityIdResponse createExpense(CreatePersonalExpenseRequest createPersonalExpenseRequest) {
 
         String description = createPersonalExpenseRequest.getDescription();
         String tagId = createPersonalExpenseRequest.getTagId();
@@ -73,7 +73,7 @@ public class PersonalExpenseService {
 
 
         PersonalExpense saved = this.personalExpenseRepository.save(expense);
-        return new CreateEntityResponse(saved.getId().toString());
+        return new EntityIdResponse(saved.getId().toString());
     }
 
     private GetPersonalExpenseResponse mapToResponse(PersonalExpense expense) {
@@ -247,7 +247,7 @@ public class PersonalExpenseService {
                 .build();
     }
 
-    public CreateEntityResponse updateExpense(
+    public EntityIdResponse updateExpense(
             String expenseId,
             UpdatePersonalExpenseRequest updatePersonalExpenseRequest) {
 
@@ -283,7 +283,7 @@ public class PersonalExpenseService {
                 dbTagId
         );
 
-        return new CreateEntityResponse(expenseId);
+        return new EntityIdResponse(expenseId);
     }
 
 }
