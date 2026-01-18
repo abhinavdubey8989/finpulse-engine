@@ -57,8 +57,10 @@ public class GroupController {
 
 
     @PostMapping("/{groupId}/summary")
-    public Object getGroupSummary(@RequestBody Object loginRequest) {
-        return null;
+    public GroupExpenseSummaryResponse getGroupExpenseSummary(
+            @PathVariable String groupId,
+            @RequestBody ExpenseSummaryRequest expenseSummaryRequest) {
+        return this.groupService.getGroupExpenseSummary(groupId, expenseSummaryRequest);
     }
 
 }

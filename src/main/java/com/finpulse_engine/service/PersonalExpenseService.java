@@ -1,7 +1,7 @@
 package com.finpulse_engine.service;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
-import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
+import com.finpulse_engine.dto.request.ExpenseSummaryRequest;
 import com.finpulse_engine.dto.request.UpdatePersonalExpenseRequest;
 import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseCategory;
@@ -112,11 +112,11 @@ public class PersonalExpenseService {
     }
 
 
-    public GetPersonalExpenseSumaryResponse getPersonalExpenseSummary(String userId, GetPersonalExpenseSumaryRequest getPersonalExpenseSumaryRequest) {
+    public GetPersonalExpenseSummaryResponse getPersonalExpenseSummary(String userId, ExpenseSummaryRequest expenseSummaryRequest) {
         List<PersonalExpense> expenses = this.personalExpenseRepository.findByUserIdAndYearAndMonth(
                 UUID.fromString(userId),
-                getPersonalExpenseSumaryRequest.getYear(),
-                getPersonalExpenseSumaryRequest.getMonth()
+                expenseSummaryRequest.getYear(),
+                expenseSummaryRequest.getMonth()
         );
 
         List<ExpenseCategory> categories = this.expenseCategoryRepository.findByUserId(UUID.fromString(userId));
@@ -214,7 +214,7 @@ public class PersonalExpenseService {
         }
 
         // Build summary elements
-        List<PersonalExpenseSumaryElement> elements = expenseSumByCategory.entrySet()
+        List<PersonalExpenseSummaryElement> elements = expenseSumByCategory.entrySet()
                 .stream()
                 .map(entry -> {
 
@@ -222,7 +222,7 @@ public class PersonalExpenseService {
                     Integer totalSpent = entry.getValue();
                     ExpenseCategory category = categoryMap.get(categoryId);
 
-                    return PersonalExpenseSumaryElement.builder()
+                    return PersonalExpenseSummaryElement.builder()
                             .categoryId(categoryId.toString())
                             .category(category.getCategory())
                             .categoryDescription(category.getDescription())
@@ -237,10 +237,10 @@ public class PersonalExpenseService {
 
         int totalExpenseAmount = expenses.stream().mapToInt(expense -> expense.getAmount()).sum();
 
-        return GetPersonalExpenseSumaryResponse.builder()
+        return GetPersonalExpenseSummaryResponse.builder()
                 .userId(userId)
-                .year(getPersonalExpenseSumaryRequest.getYear())
-                .month(getPersonalExpenseSumaryRequest.getMonth())
+                .year(expenseSummaryRequest.getYear())
+                .month(expenseSummaryRequest.getMonth())
                 .numberOfExpenses(expenses.size())
                 .totalExpenseAmount(totalExpenseAmount)
                 .elements(elements)

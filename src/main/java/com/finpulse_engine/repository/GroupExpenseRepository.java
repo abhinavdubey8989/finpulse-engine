@@ -27,7 +27,7 @@ public interface GroupExpenseRepository extends JpaRepository<GroupExpense, UUID
             t.tagId = :tagId,
             t.splitType = :splitType,
             t.splits = :splits,
-            t.dueAmount = :dueAmount,
+            t.dueAmounts = :dueAmounts,
             t.updatedAt = CURRENT_TIMESTAMP
         WHERE t.id = :id
     """)
@@ -39,7 +39,9 @@ public interface GroupExpenseRepository extends JpaRepository<GroupExpense, UUID
             @Param("tagId") UUID tagId,
             @Param("splitType") SplitType splitType,
             @Param("splits") Map<String, Integer> splits,
-            @Param("dueAmount") Map<String, Integer> dueAmount
+            @Param("dueAmounts") Map<String, Integer> dueAmounts
     );
+
+    List<GroupExpense> findByGroupIdAndYearAndMonth(UUID groupId, Integer year, Integer month);
 
 }

@@ -1,6 +1,7 @@
 package com.finpulse_engine.repository;
 
 import com.finpulse_engine.entity.ExpenseCategory;
+import com.finpulse_engine.enums.DifferentiatorType;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -39,4 +40,6 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
 
     boolean existsByGroupIdAndCategory(UUID groupId, String categoryName);
     boolean existsByIdAndGroupId(UUID id, UUID groupId);
+
+    List<ExpenseCategory> findByTypeAndGroupId(DifferentiatorType type, UUID groupId);
 }

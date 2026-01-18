@@ -1,11 +1,11 @@
 package com.finpulse_engine.controller;
 
 import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
-import com.finpulse_engine.dto.request.GetPersonalExpenseSumaryRequest;
+import com.finpulse_engine.dto.request.ExpenseSummaryRequest;
 import com.finpulse_engine.dto.request.UpdatePersonalExpenseRequest;
 import com.finpulse_engine.dto.response.EntityIdResponse;
 import com.finpulse_engine.dto.response.GetPersonalExpenseResponse;
-import com.finpulse_engine.dto.response.GetPersonalExpenseSumaryResponse;
+import com.finpulse_engine.dto.response.GetPersonalExpenseSummaryResponse;
 import com.finpulse_engine.service.PersonalExpenseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +43,10 @@ public class PersonalExpenseController {
     }
 
     @PostMapping("/{userId}/summary")
-    public GetPersonalExpenseSumaryResponse getPersonalExpenseSummary(
+    public GetPersonalExpenseSummaryResponse getPersonalExpenseSummary(
             @PathVariable String userId,
-            @RequestBody GetPersonalExpenseSumaryRequest getPersonalExpenseSumaryRequest
+            @RequestBody ExpenseSummaryRequest expenseSummaryRequest
             ) {
-        return this.personalExpenseService.getPersonalExpenseSummary(userId, getPersonalExpenseSumaryRequest);
+        return this.personalExpenseService.getPersonalExpenseSummary(userId, expenseSummaryRequest);
     }
 }

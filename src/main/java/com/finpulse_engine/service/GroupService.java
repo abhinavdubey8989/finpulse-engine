@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -400,6 +401,266 @@ public class GroupService {
         );
 
         return new EntityIdResponse(expenseId);
+    }
+
+    public Map<String, GroupExpenseSummaryUserDetail> getGroupExpenseSummaryUserDetail(
+            List<GroupMembership> groupMembershipList,
+            List<GroupExpense> groupExpenseList
+    ) {
+        List<UUID> userIds = groupMembershipList.stream().map(GroupMembership::getUserId).toList();
+        List<User> users = this.userRepository.findAllById(userIds);
+        Map<String, GroupExpenseSummaryUserDetail> groupExpenseSummaryUserDetailMap = new HashMap<>();
+
+        // 1 item refers to 1 user in the group
+        for (GroupMembership groupMembership : groupMembershipList) {
+            UUID userId = groupMembership.getUserId();
+            User user = users.stream().filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
+            if (user == null) {
+                throw new RuntimeException("User not found in GroupMembership with id: " + userId);
+            }
+
+            List<GroupExpense> expensesDoneByThisUser = groupExpenseList.stream()
+                    .filter(e -> e.getPaidBy().equals(userId))
+                    .toList();
+
+            int totalExpenseDoneByThisUser = expensesDoneByThisUser.stream().mapToInt(GroupExpense::getAmount).sum();
+
+
+            groupExpenseSummaryUserDetailMap.put(
+                    userId.toString(),
+                    GroupExpenseSummaryUserDetail.builder()
+                            .name(user.getName())
+                            .emailId(user.getEmail())
+                            .expenseCount(expensesDoneByThisUser.size())
+                            .totalExpenseAmount(totalExpenseDoneByThisUser)
+                            .build()
+            );
+
+
+        }
+        return groupExpenseSummaryUserDetailMap;
+    }
+
+
+    public Map<String, Map<String, Integer>> getGroupExpenseSummaryDueAmounts(List<GroupExpense> groupExpenseList) {
+        Map<String, Map<String, Integer>> dueAmountResponse = new HashMap<>();
+
+        for (GroupExpense groupExpense : groupExpenseList) {
+
+            Map<String, Integer> currentExpenseDuesInDb = groupExpense.getDueAmounts();
+            UUID receivingUserId = groupExpense.getPaidBy();
+
+            Map<String, Integer> dueMapForReceivingUserId = dueAmountResponse.getOrDefault(
+                    receivingUserId.toString(),
+                    new HashMap<>());
+
+            for (Map.Entry<String, Integer> entry : currentExpenseDuesInDb.entrySet()) {
+                String sendingUserId = entry.getKey();
+                int currentExpenseDueAmount = entry.getValue();
+                int totalDueAmountTillNow = currentExpenseDueAmount + dueMapForReceivingUserId.getOrDefault(sendingUserId, 0);
+                dueMapForReceivingUserId.put(sendingUserId, totalDueAmountTillNow);
+            }
+
+            dueAmountResponse.put(
+                    receivingUserId.toString(),
+                    dueMapForReceivingUserId
+            );
+
+        }
+
+        return dueAmountResponse;
+    }
+
+
+    public GroupExpenseSummaryResponse getGroupExpenseSummary(
+            String groupId,
+            ExpenseSummaryRequest expenseSummaryRequest) {
+
+        List<GroupExpense> groupExpenses = this.groupExpenseRepository.findByGroupIdAndYearAndMonth(
+                UUID.fromString(groupId),
+                expenseSummaryRequest.getYear(),
+                expenseSummaryRequest.getMonth()
+        );
+
+        List<ExpenseCategory> categories = this.expenseCategoryRepository.findByTypeAndGroupId(
+                DifferentiatorType.GROUP,
+                UUID.fromString(groupId));
+
+        List<UUID> categoryIds = categories.stream().map(ExpenseCategory::getId).collect(Collectors.toList());
+        List<ExpenseTag> tags = this.expenseTagRepository.findByCategoryIdIn(categoryIds);
+        List<GroupMembership> groupMembershipList = this.groupMembershipRepository.findAllByGroupId(UUID.fromString(groupId));
+
+
+        // UUID -> category map (for fast lookup)
+        Map<UUID, ExpenseCategory> categoryMap =
+                categories.stream()
+                        .collect(Collectors.toMap(
+                                ExpenseCategory::getId,
+                                Function.identity()
+                        ));
+
+        // UUID -> tag map (for fast lookup)
+        Map<UUID, ExpenseTag> tagMap =
+                tags.stream()
+                        .collect(Collectors.toMap(
+                                ExpenseTag::getId,
+                                Function.identity()
+                        ));
+
+        // UUID -> List<UUID> (category -> tagIds)
+        Map<UUID, List<UUID>> categoryToTagsMap = new HashMap<>();
+        for (ExpenseCategory category : categories) {
+            List<UUID> tagsOfCategory = new ArrayList<>();
+            for (ExpenseTag tag : tags) {
+                if (category.getId().equals(tag.getCategoryId())) {
+                    tagsOfCategory.add(tag.getId());
+                }
+            }
+            categoryToTagsMap.put(category.getId(), tagsOfCategory);
+        }
+
+        // UUID -> UUID (tagId -> category)
+        Map<UUID, UUID> tagIdToCategoryIdMap =
+                tags.stream().collect(Collectors.toMap(
+                        ExpenseTag::getId,
+                        ExpenseTag::getCategoryId
+                ));
+
+
+        // Group expenses by categoryId and sum amounts
+        Map<UUID, Integer> expenseSumByCategory =
+                groupExpenses.stream()
+                        .collect(Collectors.groupingBy(
+                                GroupExpense::getCategoryId,
+                                Collectors.summingInt(GroupExpense::getAmount)
+                        ));
+
+
+        // Map<categoryId , Map<tagId, sum>>
+        Map<UUID, Map<String, Integer>> categoryIdToTagIdToSumMap = new HashMap<>();
+        for (GroupExpense groupExpense : groupExpenses) {
+            String tagId = groupExpense.getTagId() == null ? "Others" : groupExpense.getTagId().toString();
+            Map<String, Integer> tagIdToSumMap = categoryIdToTagIdToSumMap.getOrDefault(
+                    groupExpense.getCategoryId(),
+                    new HashMap<>()
+            );
+            tagIdToSumMap.put(
+                    tagId,
+                    groupExpense.getAmount() + tagIdToSumMap.getOrDefault(tagId, 0)
+            );
+            categoryIdToTagIdToSumMap.put(groupExpense.getCategoryId(), tagIdToSumMap);
+        }
+
+        // Map<categoryId , Map<userId, sum>>
+        Map<UUID, Map<String, Integer>> categoryIdToUserIdToSumMap = new HashMap<>();
+        for (GroupExpense groupExpense : groupExpenses) {
+            String paidByUserId = groupExpense.getPaidBy().toString();
+            Map<String, Integer> userIdToSumMap = categoryIdToUserIdToSumMap.getOrDefault(
+                    groupExpense.getCategoryId(),
+                    new HashMap<>()
+            );
+            userIdToSumMap.put(
+                    paidByUserId,
+                    groupExpense.getAmount() + userIdToSumMap.getOrDefault(paidByUserId, 0)
+            );
+            categoryIdToUserIdToSumMap.put(groupExpense.getCategoryId(), userIdToSumMap);
+        }
+
+        // Map <categoryId, List<tagBreakup>>
+        Map<UUID, List<ExpenseTagWithAmountResponse>> categoryIdToExpenseTagWithAmount = new HashMap<>();
+        for (Map.Entry<UUID, List<UUID>> categoryToTagsMapEntry : categoryToTagsMap.entrySet()) {
+            UUID categoryId = categoryToTagsMapEntry.getKey();
+            List<ExpenseTagWithAmountResponse> expenseTagsWithAmountForCategory = categoryIdToExpenseTagWithAmount.getOrDefault(categoryId, new ArrayList<>());
+            for (UUID tagId : categoryToTagsMapEntry.getValue()) {
+                int expenseAmount = categoryIdToTagIdToSumMap.getOrDefault(categoryId, new HashMap<>()).getOrDefault(tagId.toString(), 0);
+                expenseTagsWithAmountForCategory.add(
+                        ExpenseTagWithAmountResponse.builder()
+                                .id(tagId.toString())
+                                .name(tagMap.get(tagId).getName())
+                                .expenseAmount(expenseAmount)
+                                .build()
+                );
+            }
+
+            if (categoryIdToTagIdToSumMap.containsKey(categoryId)) {
+                expenseTagsWithAmountForCategory.add(
+                        ExpenseTagWithAmountResponse.builder()
+                                .id("Others")
+                                .name("Others")
+                                .expenseAmount(categoryIdToTagIdToSumMap.get(categoryId).getOrDefault("Others", 0))
+                                .build()
+                );
+            }
+
+            categoryIdToExpenseTagWithAmount.put(
+                    categoryToTagsMapEntry.getKey(),
+                    expenseTagsWithAmountForCategory);
+        }
+
+        // Map <categoryId, List<userBreakup>>
+        Map<UUID, List<UserAmountBreakupResponse>> categoryIdToUserBreakup = new HashMap<>();
+        for (GroupExpense groupExpense : groupExpenses) {
+
+            List<UserAmountBreakupResponse> userBreakupForThisCategory = categoryIdToUserBreakup.getOrDefault(
+                    groupExpense.getCategoryId(),
+                    new ArrayList<>());
+
+            String paidByUserId = groupExpense.getPaidBy().toString();
+
+            UserAmountBreakupResponse userExpenseSoFarForCategory = userBreakupForThisCategory
+                    .stream()
+                    .filter(u -> u.getUserId().equals(paidByUserId))
+                    .findFirst()
+                    .orElse(UserAmountBreakupResponse.builder()
+                            .expenseAmount(0)
+                            .userId(paidByUserId)
+                            .build());
+
+
+            Integer expenseSoFar = userExpenseSoFarForCategory.getExpenseAmount();
+            userExpenseSoFarForCategory.setExpenseAmount(groupExpense.getAmount() + expenseSoFar);
+
+            userBreakupForThisCategory.removeIf(e -> e.getUserId().equals(paidByUserId));
+            userBreakupForThisCategory.add(userExpenseSoFarForCategory);
+            categoryIdToUserBreakup.put(
+                    groupExpense.getCategoryId(),
+                    userBreakupForThisCategory);
+        }
+
+        // Build summary elements
+        List<GroupExpenseSummaryElement> elements = expenseSumByCategory.entrySet()
+                .stream()
+                .map(entry -> {
+
+                    UUID categoryId = entry.getKey();
+                    Integer totalSpent = entry.getValue();
+                    ExpenseCategory category = categoryMap.get(categoryId);
+
+                    return GroupExpenseSummaryElement.builder()
+                            .categoryId(categoryId.toString())
+                            .category(category.getCategory())
+                            .categoryDescription(category.getDescription())
+                            .monthlyUpperLimit(
+                                    category.getMonthlyUpperLimit().longValue()
+                            )
+                            .monthlyExpenseDone(totalSpent.longValue())
+                            .tagBreakup(categoryIdToExpenseTagWithAmount.getOrDefault(categoryId, new ArrayList<>()))
+                            .userAmountBreakup(categoryIdToUserBreakup.getOrDefault(categoryId, new ArrayList<>()))
+                            .build();
+                })
+                .toList();
+
+        int totalExpenseAmount = groupExpenses.stream().mapToInt(GroupExpense::getAmount).sum();
+
+        return GroupExpenseSummaryResponse.builder()
+                .year(expenseSummaryRequest.getYear())
+                .month(expenseSummaryRequest.getMonth())
+                .numberOfExpenses(groupExpenses.size())
+                .totalExpenseAmount(totalExpenseAmount)
+                .users(getGroupExpenseSummaryUserDetail(groupMembershipList, groupExpenses))
+                .elements(elements)
+                .dueAmounts(getGroupExpenseSummaryDueAmounts(groupExpenses))
+                .build();
     }
 
 
