@@ -30,9 +30,4 @@ public class GroupExpenseSummaryResponse {
 
     @NotBlank
     private List<GroupExpenseSummaryElement> elements;
-
-    @NotBlank
-    private Map<String, Map<String, Integer>> dueAmounts;
-
-
 }

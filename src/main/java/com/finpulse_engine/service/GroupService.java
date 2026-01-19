@@ -405,73 +405,99 @@ public class GroupService {
 
     public Map<String, GroupExpenseSummaryUserDetail> getGroupExpenseSummaryUserDetail(
             List<GroupMembership> groupMembershipList,
-            List<GroupExpense> groupExpenseList
-    ) {
+            List<GroupExpense> groupExpenseList) {
+
         List<UUID> userIds = groupMembershipList.stream().map(GroupMembership::getUserId).toList();
         List<User> users = this.userRepository.findAllById(userIds);
         Map<String, GroupExpenseSummaryUserDetail> groupExpenseSummaryUserDetailMap = new HashMap<>();
 
-        // 1 item refers to 1 user in the group
+        Map<String, Map<String, Integer>> userIdToDebitAmounts = new HashMap<>();
+        Map<String, Map<String, Integer>> userIdToCreditAmounts = new HashMap<>();
+
         for (GroupMembership groupMembership : groupMembershipList) {
-            UUID userId = groupMembership.getUserId();
-            User user = users.stream().filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
-            if (user == null) {
-                throw new RuntimeException("User not found in GroupMembership with id: " + userId);
+            String memberUserId = groupMembership.getUserId().toString();
+            User memberUser = users.stream().filter(u -> u.getId().toString().equals(memberUserId)).findFirst().orElse(null);
+
+            if (memberUser == null) {
+                throw new RuntimeException("User not found in GroupMembership with id: " + memberUserId);
             }
-
-            List<GroupExpense> expensesDoneByThisUser = groupExpenseList.stream()
-                    .filter(e -> e.getPaidBy().equals(userId))
-                    .toList();
-
-            int totalExpenseDoneByThisUser = expensesDoneByThisUser.stream().mapToInt(GroupExpense::getAmount).sum();
-
-
             groupExpenseSummaryUserDetailMap.put(
-                    userId.toString(),
+                    groupMembership.getUserId().toString(),
                     GroupExpenseSummaryUserDetail.builder()
-                            .name(user.getName())
-                            .emailId(user.getEmail())
-                            .expenseCount(expensesDoneByThisUser.size())
-                            .totalExpenseAmount(totalExpenseDoneByThisUser)
+                            .name(memberUser.getName())
+                            .emailId(memberUser.getEmail())
+                            .totalExpenseAmount(0) // this will be updated later
+                            .expenseCount(0) // this will be updated later
+                            .creditAmounts(new HashMap<>()) // this will be updated later
+                            .debitAmounts(new HashMap<>()) // this will be updated later
                             .build()
             );
+        }
 
+
+        // 1 item refers to 1 user in the group
+        for (GroupMembership groupMembership : groupMembershipList) {
+            String userIdWhoDidExpense = groupMembership.getUserId().toString();
+            User userWhoDidExpense = users.stream().filter(u -> u.getId().toString().equals(userIdWhoDidExpense)).findFirst().orElse(null);
+
+            List<GroupExpense> expensesDoneByThisUser = groupExpenseList
+                    .stream()
+                    .filter(e -> e.getPaidBy().toString().equals(userIdWhoDidExpense))
+                    .toList();
+
+            groupExpenseSummaryUserDetailMap.get(userIdWhoDidExpense).
+                    setExpenseCount(expensesDoneByThisUser.size());
+
+            groupExpenseSummaryUserDetailMap.get(userIdWhoDidExpense)
+                    .setTotalExpenseAmount(expensesDoneByThisUser.stream().mapToInt(e -> e.getAmount()).sum());
+
+
+            Map<String, Integer> userCreditAmounts = userIdToCreditAmounts.getOrDefault(userIdWhoDidExpense, new HashMap<>());
+
+            for (GroupExpense expenseByThisUser : expensesDoneByThisUser) {
+                Map<String, Integer> usersInExpense = expenseByThisUser.getDueAmounts();
+
+                for (Map.Entry<String, Integer> entry : usersInExpense.entrySet()) {
+                    String userIdWhoOwesMoney = entry.getKey();
+                    Integer amountOwedByUserIdWhoOwesMoney = entry.getValue();
+
+                    if (userIdWhoOwesMoney == null || amountOwedByUserIdWhoOwesMoney == null) {
+                        throw new RuntimeException("Null value for userIdWhoOwesMoney or amountOwedByUserIdWhoOwesMoney");
+                    }
+
+                    Map<String, Integer> userIdWhoOwesMoneyDebitAmounts = userIdToDebitAmounts.getOrDefault(
+                            userIdWhoOwesMoney,
+                            new HashMap<>());
+
+
+                    userCreditAmounts.put(
+                            userIdWhoOwesMoney,
+                            amountOwedByUserIdWhoOwesMoney + userCreditAmounts.getOrDefault(userIdWhoOwesMoney, 0)
+                    );
+
+                    userIdWhoOwesMoneyDebitAmounts.put(
+                            userIdWhoDidExpense,
+                            amountOwedByUserIdWhoOwesMoney + userIdWhoOwesMoneyDebitAmounts.getOrDefault(userIdWhoDidExpense, 0)
+                    );
+
+                    userIdToDebitAmounts.put(userIdWhoOwesMoney, userIdWhoOwesMoneyDebitAmounts);
+                    userIdToCreditAmounts.put(userIdWhoDidExpense, userCreditAmounts);
+
+                    groupExpenseSummaryUserDetailMap.get(userIdWhoDidExpense).
+                            setCreditAmounts(userCreditAmounts);
+
+                    groupExpenseSummaryUserDetailMap.get(userIdWhoOwesMoney).
+                            setDebitAmounts(userIdWhoOwesMoneyDebitAmounts);
+
+                }
+            }
 
         }
+
         return groupExpenseSummaryUserDetailMap;
     }
 
-
-    public Map<String, Map<String, Integer>> getGroupExpenseSummaryDueAmounts(List<GroupExpense> groupExpenseList) {
-        Map<String, Map<String, Integer>> dueAmountResponse = new HashMap<>();
-
-        for (GroupExpense groupExpense : groupExpenseList) {
-
-            Map<String, Integer> currentExpenseDuesInDb = groupExpense.getDueAmounts();
-            UUID receivingUserId = groupExpense.getPaidBy();
-
-            Map<String, Integer> dueMapForReceivingUserId = dueAmountResponse.getOrDefault(
-                    receivingUserId.toString(),
-                    new HashMap<>());
-
-            for (Map.Entry<String, Integer> entry : currentExpenseDuesInDb.entrySet()) {
-                String sendingUserId = entry.getKey();
-                int currentExpenseDueAmount = entry.getValue();
-                int totalDueAmountTillNow = currentExpenseDueAmount + dueMapForReceivingUserId.getOrDefault(sendingUserId, 0);
-                dueMapForReceivingUserId.put(sendingUserId, totalDueAmountTillNow);
-            }
-
-            dueAmountResponse.put(
-                    receivingUserId.toString(),
-                    dueMapForReceivingUserId
-            );
-
-        }
-
-        return dueAmountResponse;
-    }
-
-
+    
     public GroupExpenseSummaryResponse getGroupExpenseSummary(
             String groupId,
             ExpenseSummaryRequest expenseSummaryRequest) {
@@ -659,7 +685,6 @@ public class GroupService {
                 .totalExpenseAmount(totalExpenseAmount)
                 .users(getGroupExpenseSummaryUserDetail(groupMembershipList, groupExpenses))
                 .elements(elements)
-                .dueAmounts(getGroupExpenseSummaryDueAmounts(groupExpenses))
                 .build();
     }
 

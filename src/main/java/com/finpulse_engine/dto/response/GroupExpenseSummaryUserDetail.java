@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -23,4 +24,7 @@ public class GroupExpenseSummaryUserDetail {
 
     @NotNull
     private int expenseCount;
+
+    private Map<String , Integer> debitAmounts;
+    private Map<String , Integer> creditAmounts;
 }
