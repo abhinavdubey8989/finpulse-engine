@@ -285,9 +285,9 @@ public class GroupService {
             throw new RuntimeException("Either tags or description is needed");
         }
 
-        boolean categoryExists = this.expenseCategoryRepository.existsByUserIdAndId(
-                UUID.fromString(createGroupExpenseRequest.getPaidByUserId()),
-                UUID.fromString(createGroupExpenseRequest.getCategoryId())
+        boolean categoryExists = this.expenseCategoryRepository.existsByTypeAndGroupId(
+                DifferentiatorType.GROUP,
+                UUID.fromString(groupId)
         );
 
         if (!categoryExists) {
@@ -465,6 +465,11 @@ public class GroupService {
                         throw new RuntimeException("Null value for userIdWhoOwesMoney or amountOwedByUserIdWhoOwesMoney");
                     }
 
+                    // Skip if the user owes money to themselves
+                    if (userIdWhoOwesMoney.equals(userIdWhoDidExpense)) {
+                        continue;
+                    }
+
                     Map<String, Integer> userIdWhoOwesMoneyDebitAmounts = userIdToDebitAmounts.getOrDefault(
                             userIdWhoOwesMoney,
                             new HashMap<>());
@@ -494,10 +499,47 @@ public class GroupService {
 
         }
 
+        // Net the credit and debit amounts between users
+        for (String userId : groupExpenseSummaryUserDetailMap.keySet()) {
+            GroupExpenseSummaryUserDetail userDetail = groupExpenseSummaryUserDetailMap.get(userId);
+            Map<String, Integer> creditAmounts = userDetail.getCreditAmounts();
+            Map<String, Integer> debitAmounts = userDetail.getDebitAmounts();
+            
+            Map<String, Integer> nettedCreditAmounts = new HashMap<>();
+            Map<String, Integer> nettedDebitAmounts = new HashMap<>();
+            
+            // Process all users this user has transactions with
+            for (String otherUserId : creditAmounts.keySet()) {
+                int creditAmount = creditAmounts.get(otherUserId);
+                int debitAmount = debitAmounts.getOrDefault(otherUserId, 0);
+                
+                int netAmount = creditAmount - debitAmount;
+                
+                if (netAmount > 0) {
+                    // Net credit - this user should receive money
+                    nettedCreditAmounts.put(otherUserId, netAmount);
+                } else if (netAmount < 0) {
+                    // Net debit - this user should pay money
+                    nettedDebitAmounts.put(otherUserId, Math.abs(netAmount));
+                }
+                // If netAmount == 0, they're even, so we don't add anything
+            }
+            
+            // Process debits that don't have corresponding credits
+            for (String otherUserId : debitAmounts.keySet()) {
+                if (!creditAmounts.containsKey(otherUserId)) {
+                    nettedDebitAmounts.put(otherUserId, debitAmounts.get(otherUserId));
+                }
+            }
+            
+            userDetail.setCreditAmounts(nettedCreditAmounts);
+            userDetail.setDebitAmounts(nettedDebitAmounts);
+        }
+
         return groupExpenseSummaryUserDetailMap;
     }
 
-    
+
     public GroupExpenseSummaryResponse getGroupExpenseSummary(
             String groupId,
             ExpenseSummaryRequest expenseSummaryRequest) {
@@ -688,5 +730,128 @@ public class GroupService {
                 .build();
     }
 
+
+    private ExpenseCategoryElement mapToResponse(ExpenseCategory expenseCategory) {
+        List<ExpenseTag> expenseTags = this.expenseTagRepository.findByCategoryId(expenseCategory.getId());
+        List<ExpenseTagResponse> expenseTagsResponse = new ArrayList<>();
+        for (ExpenseTag expenseTag : expenseTags) {
+            expenseTagsResponse.add(
+                    ExpenseTagResponse.builder()
+                            .id(expenseTag.getId().toString())
+                            .name(expenseTag.getName())
+                            .build()
+            );
+        }
+
+        return ExpenseCategoryElement.builder()
+                .id(expenseCategory.getId().toString())
+                .category(expenseCategory.getCategory())
+                .monthlyUpperLimit(expenseCategory.getMonthlyUpperLimit())
+                .description(expenseCategory.getDescription())
+                .tags(expenseTagsResponse)
+                .build();
+    }
+
+
+    public GroupSettingsResponse getGroupSettings(String groupId) {
+
+        List<ExpenseCategory> expenseCategories = this.expenseCategoryRepository.findByTypeAndGroupId(
+                DifferentiatorType.GROUP,
+                UUID.fromString(groupId));
+
+        return GroupSettingsResponse.builder()
+                .groupId(groupId)
+                .expenseCategories(expenseCategories
+                        .stream()
+                        .map(this::mapToResponse)
+                        .toList())
+                .build();
+
+    }
+
+
+    public List<GroupAndCategoryResponse> getGroupAndCategoryList(List<User> allUsers, String userId) {
+        List<GroupAndCategoryResponse> result = new ArrayList<>();
+        List<GroupMembership> groupMembershipList = this.groupMembershipRepository.findAllByUserId(UUID.fromString(userId));
+
+        List<UUID> groupIds = groupMembershipList.stream().map(GroupMembership::getGroupId).toList();
+        List<ExpenseGroup> groupsOfThisUser = this.expenseGroupRepository.findAllById(groupIds);
+
+        List<ExpenseCategory> expenseCategoriesOfThisGroup = this.expenseCategoryRepository.findAllByTypeAndGroupIdIn(
+                DifferentiatorType.GROUP,
+                groupsOfThisUser.stream().map(ExpenseGroup::getId).toList());
+
+
+        Map<String, List<ExpenseTagResponse>> categoryIdToExpenseTagResponseList = new HashMap<>();
+        for (ExpenseCategory expenseCategory : expenseCategoriesOfThisGroup) {
+            List<ExpenseTagResponse> expenseTagsResponse = new ArrayList<>();
+            List<ExpenseTag> expenseTags = this.expenseTagRepository.findByCategoryId(expenseCategory.getId());
+            for (ExpenseTag expenseTag : expenseTags) {
+                expenseTagsResponse.add(
+                        ExpenseTagResponse.builder()
+                                .id(expenseTag.getId().toString())
+                                .name(expenseTag.getName())
+                                .build()
+                );
+            }
+            categoryIdToExpenseTagResponseList.put(
+                    expenseCategory.getId().toString(),
+                    expenseTagsResponse
+            );
+        }
+
+        for (ExpenseGroup groupOfThisUser : groupsOfThisUser) {
+            String groupId = groupOfThisUser.getId().toString();
+
+            List<GroupMembership> groupMemberships = this.groupMembershipRepository.findAllByGroupId(UUID.fromString(groupId));
+            List<UUID> userIds = groupMemberships.stream().map(GroupMembership::getUserId).toList();
+
+            List<User> groupMembers = allUsers.stream().filter(u -> userIds.contains(u.getId())).toList();
+            result.add(
+                    GroupAndCategoryResponse.builder()
+                            .groupId(groupOfThisUser.getId().toString())
+                            .groupName(groupOfThisUser.getName())
+                            .groupDescription(groupOfThisUser.getDescription())
+                            .members(groupMembers.stream().map(
+                                            user -> UserDetailResponse.builder()
+                                                    .userId(user.getId().toString())
+                                                    .name(user.getName())
+                                                    .emailId(user.getEmail())
+                                                    .build())
+                                    .toList())
+                            .expenseCategories(expenseCategoriesOfThisGroup.stream()
+                                    .filter(ec -> ec.getGroupId().toString().equals(groupId))
+                                    .map(
+                                            ec -> ExpenseCategoryElement.builder()
+                                                    .id(ec.getId().toString())
+                                                    .category(ec.getCategory())
+                                                    .monthlyUpperLimit(ec.getMonthlyUpperLimit())
+                                                    .description(ec.getDescription())
+                                                    .tags(categoryIdToExpenseTagResponseList.get(ec.getId().toString()))
+                                                    .build())
+                                    .toList())
+                            .build()
+            );
+
+
+        }
+
+        return result;
+    }
+
+
+    public ConfigureGroupResponse configureGroup(String userId) {
+
+        List<User> allUsers = this.userRepository.findAll();
+        return ConfigureGroupResponse.builder()
+                .allUsers(allUsers.stream().map(u -> UserDetailResponse.builder()
+                                .emailId(u.getEmail())
+                                .userId(u.getId().toString())
+                                .name(u.getName())
+                                .build())
+                        .toList())
+                .groupAndCategoryList(getGroupAndCategoryList(allUsers, userId))
+                .build();
+    }
 
 }

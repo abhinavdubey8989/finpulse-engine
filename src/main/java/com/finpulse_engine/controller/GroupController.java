@@ -16,6 +16,15 @@ public class GroupController {
     @Autowired
     private GroupService groupService;
 
+
+    // This API returns user-details of users in system, so that admin-user can create group
+    @GetMapping("/configure/{userId}")
+    public ConfigureGroupResponse configureGroup(
+            @PathVariable String userId) {
+        return this.groupService.configureGroup(userId);
+    }
+
+
     @PostMapping("")
     public CreateExpenseGroupResponse createGroup(@RequestBody CreateGroupRequest createGroupRequest) {
         return this.groupService.createGroup(createGroupRequest);

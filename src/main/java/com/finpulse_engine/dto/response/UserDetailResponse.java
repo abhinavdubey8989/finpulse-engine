@@ -9,12 +9,15 @@ import java.util.List;
 
 @Data
 @Builder
-public class GetUserSettingsResponse {
+public class UserDetailResponse {
 
     @NotNull
     private String userId;
 
     @NotNull
-    private List<ExpenseCategoryElement> expenseCategories;
+    private String name;
+
+    @NotNull
+    private String emailId;
 
 }

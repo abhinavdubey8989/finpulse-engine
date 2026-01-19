@@ -3,7 +3,7 @@ package com.finpulse_engine.controller;
 import com.finpulse_engine.dto.request.CreateExpenseCategoryRequest;
 import com.finpulse_engine.dto.request.UpdateExpenseCategoryRequest;
 import com.finpulse_engine.dto.response.CreateExpenseCategoryResponse;
-import com.finpulse_engine.dto.response.GetUserSettingsResponse;
+import com.finpulse_engine.dto.response.UserSettingsResponse;
 import com.finpulse_engine.dto.response.UpdateExpenseCategoryResponse;
 import com.finpulse_engine.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/settings")
-    public GetUserSettingsResponse getUserSettings(
+    public UserSettingsResponse getUserSettings(
             @PathVariable String userId) {
         return this.userService.getUserSettings(userId);
     }

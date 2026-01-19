@@ -1,16 +1,12 @@
 package com.finpulse_engine.service;
 
-import com.finpulse_engine.dto.request.CreatePersonalExpenseRequest;
 import com.finpulse_engine.dto.request.CreateExpenseCategoryRequest;
 import com.finpulse_engine.dto.request.UpdateExpenseCategoryRequest;
-import com.finpulse_engine.dto.request.UpdateExpenseTagRequest;
 import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseTag;
-import com.finpulse_engine.entity.PersonalExpense;
 import com.finpulse_engine.entity.ExpenseCategory;
 import com.finpulse_engine.enums.DifferentiatorType;
 import com.finpulse_engine.repository.ExpenseTagRepository;
-import com.finpulse_engine.repository.PersonalExpenseRepository;
 import com.finpulse_engine.repository.ExpenseCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -84,10 +80,13 @@ public class UserService {
     }
 
 
-    public GetUserSettingsResponse getUserSettings(String userId) {
+    public UserSettingsResponse getUserSettings(String userId) {
 
-        List<ExpenseCategory> expenseCategories = this.expenseCategoryRepository.findByUserId(UUID.fromString(userId));
-        return GetUserSettingsResponse.builder()
+        List<ExpenseCategory> expenseCategories = this.expenseCategoryRepository.findByUserIdAndType(
+                UUID.fromString(userId),
+                DifferentiatorType.PERSONAL
+        );
+        return UserSettingsResponse.builder()
                 .userId(userId)
                 .expenseCategories(expenseCategories
                         .stream()

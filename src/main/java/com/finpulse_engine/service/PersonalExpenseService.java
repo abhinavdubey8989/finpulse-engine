@@ -7,6 +7,7 @@ import com.finpulse_engine.dto.response.*;
 import com.finpulse_engine.entity.ExpenseCategory;
 import com.finpulse_engine.entity.ExpenseTag;
 import com.finpulse_engine.entity.PersonalExpense;
+import com.finpulse_engine.enums.DifferentiatorType;
 import com.finpulse_engine.repository.ExpenseTagRepository;
 import com.finpulse_engine.repository.PersonalExpenseRepository;
 import com.finpulse_engine.repository.ExpenseCategoryRepository;
@@ -119,7 +120,10 @@ public class PersonalExpenseService {
                 expenseSummaryRequest.getMonth()
         );
 
-        List<ExpenseCategory> categories = this.expenseCategoryRepository.findByUserId(UUID.fromString(userId));
+        List<ExpenseCategory> categories = this.expenseCategoryRepository.findByUserIdAndType(
+                UUID.fromString(userId),
+                DifferentiatorType.PERSONAL);
+
         List<UUID> categoryIds = categories.stream().map(ExpenseCategory::getId).collect(Collectors.toList());
         List<ExpenseTag> tags = this.expenseTagRepository.findByCategoryIdIn(categoryIds);
 

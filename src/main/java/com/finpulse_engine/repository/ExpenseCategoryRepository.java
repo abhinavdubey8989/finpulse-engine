@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory, UUID> {
 
-    List<ExpenseCategory> findByUserId(UUID userId);
+    List<ExpenseCategory> findByUserIdAndType(UUID userId, DifferentiatorType differentiatorType);
 
     boolean existsByUserIdAndCategory(UUID userId, String categoryName);
     boolean existsByUserIdAndId(UUID userId, UUID categoryId);
@@ -41,5 +41,8 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
     boolean existsByGroupIdAndCategory(UUID groupId, String categoryName);
     boolean existsByIdAndGroupId(UUID id, UUID groupId);
 
+    boolean existsByTypeAndGroupId(DifferentiatorType type, UUID groupId);
     List<ExpenseCategory> findByTypeAndGroupId(DifferentiatorType type, UUID groupId);
+    List<ExpenseCategory> findAllByTypeAndGroupIdIn(DifferentiatorType type, List<UUID> groupIds);
+
 }
