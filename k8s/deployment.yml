@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finpulse-engine
+  namespace: default
+  labels:
+    app: finpulse-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: finpulse-engine
+  template:
+    metadata:
+      labels:
+        app: finpulse-engine
+    spec:
+      containers:
+      - name: finpulse-engine
+        image: finpulse-engine:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8055
+          name: http
+          protocol: TCP
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: finpulse-engine-config
+        - secretRef:
+            name: finpulse-engine-secret
+        
+        # Resource limits and requests
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        
+        # Liveness probe - checks if container is running
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8055
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Readiness probe - checks if container is ready to serve traffic
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8055
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Startup probe - for slow starting containers
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8055
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000

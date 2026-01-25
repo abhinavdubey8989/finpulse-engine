@@ -1,0 +1,49 @@
+# Docker ignore file for finpulse-engine
+# Exclude unnecessary files from Docker build context
+
+# Build outputs
+build/
+target/
+out/
+*.class
+*.jar
+*.war
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs
+*.log
+logs/
+
+# Kubernetes files (not needed in container)
+k8s/
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+src/test/
