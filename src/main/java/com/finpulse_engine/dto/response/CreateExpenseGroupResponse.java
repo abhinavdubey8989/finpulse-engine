@@ -2,13 +2,16 @@ package com.finpulse_engine.dto.response;
 
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
-@AllArgsConstructor
-public class CreatePersonalExpenseResponse {
+@Builder
+public class CreateExpenseGroupResponse {
 
     @NotNull
     private String id;
+    private List<String> failedMemberIds;
 }

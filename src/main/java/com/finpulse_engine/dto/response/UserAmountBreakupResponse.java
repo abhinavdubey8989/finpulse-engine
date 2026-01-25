@@ -5,16 +5,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 @Builder
-public class GetUserSettingsResponse {
+public class UserAmountBreakupResponse {
 
     @NotNull
     private String userId;
 
     @NotNull
-    private List<ExpenseCategoryElement> expenseCategories;
-
+    private Integer expenseAmount;
 }

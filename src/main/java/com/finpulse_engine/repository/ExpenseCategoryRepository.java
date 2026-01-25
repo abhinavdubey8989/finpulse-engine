@@ -1,6 +1,7 @@
 package com.finpulse_engine.repository;
 
 import com.finpulse_engine.entity.ExpenseCategory;
+import com.finpulse_engine.enums.DifferentiatorType;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory, UUID> {
 
-    List<ExpenseCategory> findByUserId(UUID userId);
+    List<ExpenseCategory> findByUserIdAndType(UUID userId, DifferentiatorType differentiatorType);
 
     boolean existsByUserIdAndCategory(UUID userId, String categoryName);
     boolean existsByUserIdAndId(UUID userId, UUID categoryId);
@@ -35,5 +36,13 @@ public interface ExpenseCategoryRepository extends JpaRepository<ExpenseCategory
             @Param("description") String description,
             @Param("monthlyUpperLimit") int monthlyUpperLimit
     );
+
+
+    boolean existsByGroupIdAndCategory(UUID groupId, String categoryName);
+    boolean existsByIdAndGroupId(UUID id, UUID groupId);
+
+    boolean existsByTypeAndGroupId(DifferentiatorType type, UUID groupId);
+    List<ExpenseCategory> findByTypeAndGroupId(DifferentiatorType type, UUID groupId);
+    List<ExpenseCategory> findAllByTypeAndGroupIdIn(DifferentiatorType type, List<UUID> groupIds);
 
 }

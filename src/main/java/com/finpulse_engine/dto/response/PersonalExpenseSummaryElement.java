@@ -10,7 +10,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class PersonalExpenseSumaryElement {
+public class PersonalExpenseSummaryElement {
 
     @NotNull
     private String categoryId;

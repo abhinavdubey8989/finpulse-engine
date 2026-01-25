@@ -1,0 +1,75 @@
+package com.finpulse_engine.controller;
+
+import com.finpulse_engine.dto.request.*;
+import com.finpulse_engine.dto.response.*;
+import com.finpulse_engine.service.GroupService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+
+@RestController
+@RequestMapping("/api/v1/group")
+@RequiredArgsConstructor
+public class GroupController {
+
+    @Autowired
+    private GroupService groupService;
+
+
+    // This API returns user-details of users in system, so that admin-user can create group
+    @GetMapping("/configure/{userId}")
+    public ConfigureGroupResponse configureGroup(
+            @PathVariable String userId) {
+        return this.groupService.configureGroup(userId);
+    }
+
+
+    @PostMapping("")
+    public CreateExpenseGroupResponse createGroup(@RequestBody CreateGroupRequest createGroupRequest) {
+        return this.groupService.createGroup(createGroupRequest);
+    }
+
+
+    @PostMapping("/{groupId}/expense-category")
+    public CreateExpenseCategoryResponse createGroupExpenseCategory(
+            @PathVariable String groupId,
+            @RequestBody CreateGroupExpenseCategoryRequest createGroupExpenseCategoryRequest) {
+        return this.groupService.createGroupExpenseCategory(groupId, createGroupExpenseCategoryRequest);
+    }
+
+
+    @PutMapping("/{groupId}/expense-category/{categoryId}")
+    public UpdateExpenseCategoryResponse updateGroupExpenseCategory(
+            @PathVariable String groupId,
+            @PathVariable String categoryId,
+            @RequestBody UpdateGroupExpenseCategoryRequest updateGroupExpenseCategoryRequest) {
+        return this.groupService.updateExpenseCategory(groupId, categoryId, updateGroupExpenseCategoryRequest);
+    }
+
+
+    @PostMapping("/{groupId}/expense")
+    public EntityIdResponse addGroupExpense(
+            @PathVariable String groupId,
+            @RequestBody CreateGroupExpenseRequest createGroupExpenseRequest) {
+        return this.groupService.createGroupExpense(groupId, createGroupExpenseRequest);
+    }
+
+
+    @PutMapping("/{groupId}/expense/{expenseId}")
+    public EntityIdResponse updateGroupExpense(
+            @PathVariable String groupId,
+            @PathVariable String expenseId,
+            @RequestBody UpdateGroupExpenseRequest updateGroupExpenseRequest) {
+        return this.groupService.updateGroupExpense(groupId, expenseId, updateGroupExpenseRequest);
+    }
+
+
+    @PostMapping("/{groupId}/summary")
+    public GroupExpenseSummaryResponse getGroupExpenseSummary(
+            @PathVariable String groupId,
+            @RequestBody ExpenseSummaryRequest expenseSummaryRequest) {
+        return this.groupService.getGroupExpenseSummary(groupId, expenseSummaryRequest);
+    }
+
+}

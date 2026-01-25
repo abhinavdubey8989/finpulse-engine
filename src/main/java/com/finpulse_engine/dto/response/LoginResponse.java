@@ -9,4 +9,5 @@ import lombok.Data;
 public class LoginResponse {
     private String accessToken;
     private String userId;
+    private String userName;
 }
