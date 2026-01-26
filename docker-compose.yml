@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  finpulse-engine:
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: finpulse-engine
+
+    environment:
+      # Spring Boot Configuration
+      SPRING_APPLICATION_NAME: finpulse-engine
+      SERVER_PORT: 8055
+      
+      # Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5431/finpulse_db
+      SPRING_DATASOURCE_USERNAME: some-user
+      SPRING_DATASOURCE_PASSWORD: some-password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      
+      # JPA/Hibernate Configuration
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      
+      # JWT Configuration
+      JWT_SECRET: dc76e9f0c0006e8f919e0c515c66dbba3982f785
+      JWT_EXPIRATION_MS: 86400000
+      
+      # Java Options
+      JAVA_OPTS: -Xmx512m -Xms256m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom
+
+    ports:
+      - "8055:8055"
+
+    restart: unless-stopped
