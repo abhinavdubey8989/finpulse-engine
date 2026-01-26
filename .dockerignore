@@ -45,5 +45,8 @@ k8s/
 *.md
 !README.md
 
+# Configuration files (use environment variables instead)
+src/main/resources/
+
 # Test files
 src/test/
